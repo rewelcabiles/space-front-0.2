@@ -21,7 +21,6 @@ class Collision:
     def ship_collides(self, arbiter, space, data):
         ship = arbiter.shapes[0].parent
         debris = arbiter.shapes[1].parent
-
         mass_difference = (debris.body.mass - ship.body.mass) / 100
         damage = 0
         if mass_difference < 0:
@@ -44,6 +43,10 @@ class Collision:
             return False
 
         if arbiter.is_first_contact:
+            other.message_board.add_to_queue({
+                "subject" : "take_damage",
+                "damage" : projectile.damage
+            })
             self.scene.space.remove(projectile.body, projectile.shape)
             projectile.kill()
 

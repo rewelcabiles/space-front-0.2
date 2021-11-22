@@ -1,7 +1,7 @@
-from entities import KineticShip, Rock, Projectile
+from space.entities import KineticShip, Rock, Projectile
 from constants import *
 from camera import Camera
-from space_systems import Systems
+from space.space_systems import Systems
 import pygame as pg
 import pymunk as pm
 import random
@@ -27,8 +27,8 @@ class SceneManager:
             scene.input(events)
         
 import pymunk.pygame_util
-from collision import Collision, collision_type
-import collision
+from space.collision import Collision, collision_type
+from space import collision
 
 class SpaceScene:
     def __init__(self, screen):

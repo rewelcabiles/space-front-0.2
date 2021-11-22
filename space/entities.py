@@ -1,12 +1,11 @@
 from typing import List, Tuple
 from constants import *
 from pymunk import Vec2d
-from helper_functions import create_poly_sprite, linspace, lerp_angle, clamp
-from message_board import MessageBoard
-from collision import collision_type
+from helper_functions import create_poly_sprite, linspace, lerp_angle, clamp, MessageBoard
+from space.collision import collision_type
 import pygame as pg
 import pymunk as pm
-import components
+from space import components
 import math
 import random
 
@@ -87,6 +86,7 @@ class Projectile(DynamicBody):
         points = [(0, 8), (4, 0), (8, 8), (4, 16)]
         DynamicBody.__init__(self, points, 0.5, 2, collision_type["projectile"], WHITE)
         self.max_velocity = 200
+        self.damage = 2
 
 
 

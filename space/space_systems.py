@@ -1,8 +1,8 @@
 from helper_functions import lerp, lerp_angle
 from constants import *
-from entities import Rock, Player, KineticShip
+from space.entities import Rock, Player, KineticShip
 import pymunk as pm
-from collision import collision_type
+from space.collision import collision_type
 import pygame as pg
 import math
 import random

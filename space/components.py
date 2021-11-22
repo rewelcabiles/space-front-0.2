@@ -2,7 +2,7 @@ import pygame as pg
 import pymunk as pm
 import math
 
-from message_board import MessageBoard
+from helper_functions import MessageBoard
 
 class HealthSystems:
     def __init__(self, message_board: MessageBoard, base_hp = 100) -> None:
@@ -12,8 +12,6 @@ class HealthSystems:
 
     def take_damage(self, damage: int) -> None:
         self.cur_hp -= damage
-        print("OOF")
-        print(damage)
         self.message_board.add_to_queue({
             "subject": "damage_received",
             "damage" : damage
