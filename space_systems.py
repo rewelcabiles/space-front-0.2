@@ -1,63 +1,43 @@
 from helper_functions import lerp, lerp_angle
+from constants import *
+from entities import Rock, Player, KineticShip
 import pymunk as pm
+from collision import collision_type
 import pygame as pg
 import math
+import random
 
 class Systems:
-    def __init__(self):
-        self.dynamic_bodies_group = pg.sprite.Group()
-        self.kinematic_bodies_group = pg.sprite.Group()
+    def __init__(self, scene):
+        self.scene = scene
+        # GROUPS
+        self.all_sprites = pg.sprite.Group()
+        self.debris = pg.sprite.Group()
+        self.faces_cursor_group = pg.sprite.Group()
 
-    def dynamic_body_simulation(self):
-        for bodies in self.dynamic_bodies_group:
-            vel_x, vel_y = bodies.shape.body.velocity
-            bodies.rect.center = bodies.body.position
-            bodies.image = pg.transform.rotozoom( bodies.orig_image, math.degrees(-bodies.body.angle), 1)
-            bodies.rect = bodies.image.get_rect(center=bodies.rect.center)
+        # PLAYER SETUP
+        self.player = Player(scene)
+        self.player.ship = KineticShip(
+            [(0,50), (25,40), (50,50), (25, 0)],
+            5,
+            100,
+            collision_type["ship"],
+            RED
+        )
+        self.player.ship.parent = self.player
+        self.scene.camera.follow(self.player.ship)
+        self.scene.space.add(self.player.ship.body, self.player.ship.shape)
+        self.all_sprites.add(self.player.ship)
 
-    def air_friction(self, cur_x, cur_y):
-        air_friction = 0.1
-        if cur_x > 0:
-            cur_x -= air_friction
-            if cur_x < 0:
-                cur_x = 0
-        elif cur_x < 0:
-            cur_x += air_friction
-            if cur_x > 0:
-                cur_x = 0
-        if cur_y > 0:
-            cur_y -= air_friction
-            if cur_y < 0:
-                cur_y = 0
-        elif cur_y < 0:
-            cur_y += air_friction
-            if cur_y > 0:
-                cur_y = 0
+        for r in range(16):
+            new_block = Rock()
+            new_block.shape.body.position = (random.randrange(WIDTH * 2), random.randrange(HEIGHT * 2))
+            self.scene.space.add(new_block.body, new_block.shape)
+            self.all_sprites.add(new_block)
+            self.debris.add(new_block)
 
-        return cur_x, cur_y
+    def update(self, dt):
+        self.all_sprites.update()
+        self.player.update()
 
-    def kinematic_body_simulation(self):
-        for bodies in self.kinematic_bodies_group:
-            bodies.rect.center = bodies.body.position
-            bodies.image = pg.transform.rotozoom(bodies.orig_image, math.degrees(-bodies.body.angle), 1)
-            bodies.rect = bodies.image.get_rect(center=bodies.rect.center)
 
-            xx, yy = pg.mouse.get_pos()
-            mX, mY = bodies.scene.camera.screen_to_world(xx , yy)
-            goal_angle = -math.atan2(bodies.body.position.y - mY, mX - bodies.body.position.x) + math.radians(90)
-            if bodies.body.angle != goal_angle:
-                bodies.body.angle = lerp_angle(bodies.body.angle, goal_angle, 0.08)
-
-            bodies.vel_x, bodies.vel_y = self.air_friction(bodies.vel_x, bodies.vel_y)
-            if bodies.vel_x > bodies.max_velocity:
-                bodies.vel_x = bodies.max_velocity
-            elif bodies.vel_x < -bodies.max_velocity:
-                bodies.vel_x = -bodies.max_velocity
-
-            if bodies.vel_y > bodies.max_velocity:
-                bodies.vel_y = bodies.max_velocity
-
-            if bodies.vel_y < -bodies.max_velocity:
-                bodies.vel_y = -bodies.max_velocity
-
-            bodies.shape.body.velocity = (bodies.vel_x, bodies.vel_y)

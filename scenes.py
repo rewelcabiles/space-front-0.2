@@ -1,4 +1,4 @@
-from entities import KineticShip, Rock
+from entities import KineticShip, Rock, Projectile
 from constants import *
 from camera import Camera
 from space_systems import Systems
@@ -27,54 +27,53 @@ class SceneManager:
             scene.input(events)
         
 import pymunk.pygame_util
+from collision import Collision, collision_type
+import collision
 
 class SpaceScene:
     def __init__(self, screen):
-        self.all_sprites = pg.sprite.Group()
         self.space = pm.Space()
         self.space.gravity = (0, 0)
         self.space.damping = 0.9
+
         self.screen = screen
         self.camera = Camera()
-        self.player = KineticShip(self, self.space)
-        self.systems = Systems()
-        self.camera.follow(self.player)
+        self.systems = Systems(self)
+        self.collisions = Collision(self)
+        self.player = self.systems.player.ship
         self.draw_options = pm.pygame_util.DrawOptions(self.screen)
-
         
-
-        for r in range(16):
-            new_block = Rock(self.space)
-            new_block.shape.body.position = (random.randrange(WIDTH * 2), random.randrange(HEIGHT * 2))
-            self.systems.dynamic_bodies_group.add(new_block)
-            self.all_sprites.add(new_block)
-        
-        self.systems.kinematic_bodies_group.add(self.player)
-        self.all_sprites.add(self.player)
     
     def input(self, events):
         keys = pg.key.get_pressed()
+        for event in events:
+            if event.type == pg.MOUSEBUTTONDOWN:
+                if event.button == 1:
+                    new_proj = self.player.spawn_projectile()
+                    self.space.add(new_proj.body, new_proj.shape)
+                    self.systems.all_sprites.add(new_proj)
+        vel_x, vel_y = self.player.body.velocity
         if keys[pg.K_a]:
-            self.player.vel_x -= 0.4
+            vel_x -= 0.4
         if keys[pg.K_d]:
-            self.player.vel_x += 0.4
+            vel_x += 0.4
         if keys[pg.K_w]:
-            self.player.vel_y -= 0.4
+            vel_y -= 0.4
         if keys[pg.K_s]:
-            self.player.vel_y += 0.4
+            vel_y += 0.4
+        self.player.body.velocity = (vel_x, vel_y)
 
 
 
     def update(self, delta):
-        self.systems.dynamic_body_simulation()
-        self.systems.kinematic_body_simulation()
+        self.systems.update(delta)
         self.camera.update()
         self.space.step(delta)
+        
         
 
     def render(self):
         self.screen.fill(BLACK)
-        self.camera.render(self.screen, self.all_sprites)
-        
+        self.camera.render(self.screen, self.systems.all_sprites)
         #self.space.debug_draw(self.draw_options)
         #self.all_sprites.draw(self.screen)
