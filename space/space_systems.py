@@ -10,6 +10,10 @@ import random
 class Systems:
     def __init__(self, scene):
         self.scene = scene
+        
+        self.message_board = MessageBoard()
+        self.message_board.register(self.notified)
+
         # GROUPS
         self.all_sprites = pg.sprite.Group()
         self.debris = pg.sprite.Group()
@@ -34,11 +38,19 @@ class Systems:
             new_block.shape.body.position = (random.randrange(WIDTH * 2), random.randrange(HEIGHT * 2))
             self.add_entity(new_block)
 
+
+    def notified(self, message):
+        print(message)
+        if message["subject"] == "add_entity":
+            self.add_entity(message["entity"])
+
     def add_entity(self, entity):
+        entity.systems_message_board = self.message_board
+        self.scene.space.add(*entity.to_add_space)
         self.all_sprites.add(entity)
 
     def remove_entity(self, entity):
-        self.scene.space.remove(entity.body, entity.shape)
+        self.scene.space.remove(*entity.to_add_space)
         entity.kill()
 
     def update(self, delta):

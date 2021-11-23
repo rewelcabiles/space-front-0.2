@@ -36,14 +36,16 @@ class DynamicBody(pg.sprite.Sprite):
         self.shape.parent = self
         pg.draw.polygon(surface=self.image, color=color, points=points)
         self.set_image(self.image)
-        self.max_velocity = 68
+        self.max_velocity = 160
         self.parent = None
         self.message_board:MessageBoard = MessageBoard()
         self.comp_drop_table = components.DropTable(self.message_board, self)
         self.comp_health = components.HealthSystems(self.message_board, self)
         self.message_board.register(self.comp_health.notified)
         self.message_board.register(self.notified)
-        self.scene.space.add(self.body, self.shape)
+
+        self.systems_message_board = None
+        self.to_add_space = [self.shape, self.body]
 
     def notified(self, message):
         if message["subject"] == "died":
@@ -61,7 +63,7 @@ class DynamicBody(pg.sprite.Sprite):
         self.orig_image = self.image
         self.rect = self.image.get_rect()
 
-    def update(self):
+    def update(self, delta):
         self.rect.center = self.body.position
         self.image = pg.transform.rotozoom( self.orig_image, math.degrees(-self.body.angle), 1)
         self.rect = self.image.get_rect(center=self.rect.center)
@@ -75,12 +77,16 @@ class KineticShip(DynamicBody):
     def __init__(self, points, mass: float, moment: float, coll_type: int, color: Tuple, scene):
         DynamicBody.__init__(self, points, mass, moment, coll_type, color, scene)
         
+        self.comp_modules = components.ModuleController(self.message_board, self)
         self.interact_sensor = pm.Circle(self.body, max(self.rect.size) + 10)
         self.interact_sensor.sensor = True
         self.scene.space.add(self.interact_sensor)
         
         # Components
         
+    def update(self, delta):
+        super().update(delta)
+        self.comp_modules.update(delta)
 
     def face_towards(self, face_point):
         mX, mY = face_point
@@ -88,26 +94,12 @@ class KineticShip(DynamicBody):
         if self.body.angle != goal_angle:
             self.body.angle = lerp_angle(self.body.angle, goal_angle, 0.1)
 
-    def spawn_projectile(self):
-        projectile = Projectile(self.scene)
-        projectile.parent = self
-        projectile.body.position = self.body.position
-        projectile.body.angle = self.body.angle
-        
-        speed_x = 120 * math.cos(self.body.angle - math.radians(90))
-        speed_y = 120 * math.sin(self.body.angle - math.radians(90))
-
-        projectile.body.apply_impulse_at_local_point((0, -155), (0, 0))
-        projectile.vel_x = speed_x
-        projectile.vel_y = speed_y
-        return projectile
-    
 
 class Projectile(DynamicBody):
     def __init__(self, scene):
         points = [(0, 8), (4, 0), (8, 8), (4, 16)]
         DynamicBody.__init__(self, points, 0.5, 2, collision_type["projectile"], WHITE, scene)
-        self.max_velocity = 200
+        self.max_velocity = 5000
         self.damage = 4
 
 

@@ -3,6 +3,7 @@ import pymunk as pm
 import math
 import random
 from helper_functions import MessageBoard
+from space.entities import Projectile
 
 class Systems:
     def __init__(self, message_board: MessageBoard, parent) -> None:
@@ -12,6 +13,8 @@ class Systems:
     def notify(self, message):
         self.message_board.add_to_queue(message)
 
+    def notified(self, message):
+        raise NotImplementedError(("This aint implemented yet"))
     
 
 class HealthSystems(Systems):
@@ -64,12 +67,83 @@ class DropTable(Systems):
         return to_spawn
 
         
+class ModuleController(Systems):
+    PRIMARY = 1
+    SECONDARY = 2
+    def __init__(self, message_board: MessageBoard, parent) -> None:
+        super().__init__(message_board, parent)
 
+        self.primary_firing = False
+        self.secondary_firing = False
 
+        self.primary_module = ProjectileWeaponModule(self)
+        self.secondary_module = None
 
-class Inventory(Systems):
-    def __init__(self, message_board: MessageBoard) -> None:
-        super().__init__(message_board)
+    def update(self, delta):
+        if self.primary_module != None:
+            if self.primary_firing:
+                self.activate_module(ModuleController.PRIMARY)
+            self.primary_module.update(delta)
+
+        if self.secondary_module != None:
+            if self.secondary_module:
+                self.activate_module(ModuleController.SECONDARY)
+            self.secondary_module.update(delta)
+
+    def activate_module(self, module):
+        if module == ModuleController.PRIMARY and self.primary_module != None:
+            projectiles = self.primary_module.fire()
+            if projectiles:
+                for p in projectiles:
+                    self.parent.systems_message_board.add_to_queue({
+                        "subject" : "add_entity",
+                        "entity" : p
+                    })
+
+        elif module == ModuleController.SECONDARY:
+            pass
+            
+
+class Module:
+    def __init__(self, module_controller:ModuleController) -> None:
+        self.module_controller = module_controller
+
+    def fire(self):
+        pass
+
+class ProjectileWeaponModule(Module):
+    def __init__(self, module_controller :ModuleController) -> None:
+        super().__init__(module_controller)
+        self.fire_rate = 0.6
+        self.fire_rate_cd = 0
+        self.can_fire = True
+
+    def update(self, delta):
+        if not self.can_fire:
+            self.fire_rate_cd += 1 * delta
+            print(self.fire_rate_cd)
+            if self.fire_rate_cd >= self.fire_rate:
+                print("CAN FIRE NOW")
+                self.can_fire = True
+
+    def fire(self):
+        if self.can_fire:
+            self.can_fire = False
+            self.fire_rate_cd = 0
+            projectile = Projectile(self.module_controller.parent.scene)
+            projectile.parent = self.module_controller.parent
+            projectile.body.position = projectile.parent.body.position
+            projectile.body.angle = projectile.parent.body.angle
+            
+            speed_x = 120 * math.cos(projectile.parent.body.angle - math.radians(90))
+            speed_y = 120 * math.sin(projectile.parent.body.angle - math.radians(90))
+
+            projectile.body.apply_impulse_at_local_point((0, -355), (0, 0))
+            projectile.vel_x = speed_x
+            projectile.vel_y = speed_y
+            
+            return [projectile]
+        
         self.maximum_weight = 100
         self.current_weight = 0
         self.cargo_hold = []
