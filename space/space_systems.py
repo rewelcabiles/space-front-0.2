@@ -22,19 +22,24 @@ class Systems:
             5,
             100,
             collision_type["ship"],
-            RED
+            RED,
+            scene
         )
         self.player.ship.parent = self.player
         self.scene.camera.follow(self.player.ship)
-        self.scene.space.add(self.player.ship.body, self.player.ship.shape)
-        self.all_sprites.add(self.player.ship)
+        self.add_entity(self.player.ship)
 
         for r in range(16):
-            new_block = Rock()
+            new_block = Rock(scene)
             new_block.shape.body.position = (random.randrange(WIDTH * 2), random.randrange(HEIGHT * 2))
-            self.scene.space.add(new_block.body, new_block.shape)
-            self.all_sprites.add(new_block)
-            self.debris.add(new_block)
+            self.add_entity(new_block)
+
+    def add_entity(self, entity):
+        self.all_sprites.add(entity)
+
+    def remove_entity(self, entity):
+        self.scene.space.remove(entity.body, entity.shape)
+        entity.kill()
 
     def update(self, dt):
         self.all_sprites.update()

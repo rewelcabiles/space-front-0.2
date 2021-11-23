@@ -1,6 +1,6 @@
 
 col_list = [
-    "debris", "player", "projectile", "ship"
+    "debris", "player", "projectile", "ship", "loot", "sensor", "interactable"
 ]
 collision_type = dict(zip(col_list, range(len(col_list))))
 
@@ -9,9 +9,14 @@ class Collision:
         self.scene = scene
         self.space = self.scene.space
         self.system = self.scene.systems
-        #self.space.add_collision_handler(collision_type["projectile"], collision_type["debris"]).begin = self.projectile_hit
+        
         self.space.add_collision_handler(collision_type["ship"], collision_type["debris"]).begin = self.ship_collides
+        self.space.add_collision_handler(collision_type["sensor"], collision_type["interactable"]).begin = self.sensor_detect
+        
         self.space.add_wildcard_collision_handler(collision_type["projectile"]).begin = self.projectile_hit
+
+    def sensor_detect(self, arbiter, space, data):
+        pass
 
     def hit(self, arbiter, space, data):
         if arbiter.is_first_contact:
@@ -30,7 +35,7 @@ class Collision:
 
         ship.message_board.add_to_queue({
             "subject" : "take_damage",
-            "damage" : abs(mass_difference) * 0.5
+            "damage" : abs(mass_difference * 5)
         })
 
         return True
@@ -47,8 +52,8 @@ class Collision:
                 "subject" : "take_damage",
                 "damage" : projectile.damage
             })
-            self.scene.space.remove(projectile.body, projectile.shape)
-            projectile.kill()
+            self.scene.systems.remove_entity(projectile)
+        
 
             
         return True
