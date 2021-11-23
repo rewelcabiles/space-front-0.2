@@ -20,10 +20,11 @@ class Player:
     def input(self, events):
         pass
 
-    def update(self):
+    def update(self, delta):
         xx, yy = pg.mouse.get_pos()
         mX, mY = self.scene.camera.screen_to_world(xx , yy)
         self.ship.face_towards((mX, mY))
+        self.ship.update(delta)
 
 
 class DynamicBody(pg.sprite.Sprite):

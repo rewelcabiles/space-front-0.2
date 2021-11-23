@@ -41,8 +41,8 @@ class Systems:
         self.scene.space.remove(entity.body, entity.shape)
         entity.kill()
 
-    def update(self, dt):
-        self.all_sprites.update()
-        self.player.update()
+    def update(self, delta):
+        self.all_sprites.update(delta)
+        self.player.update(delta)
 
 

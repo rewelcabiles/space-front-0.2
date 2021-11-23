@@ -18,11 +18,15 @@ class Game:
         self.scene_manager.new_scene(SpaceScene(self.screen))
         
     def run(self):
-
         font = pg.font.SysFont("Arial", 18)
 
+        t = pg.time.get_ticks()
+        getTicksLastFrame = t
+
+
         while self.game_running:
-            time = self.clock.tick(FPS)
+            t = pg.time.get_ticks()
+            self.clock.tick()
             events = pg.event.get()
             for event in events:    
                 if event.type == pg.QUIT:
@@ -31,8 +35,10 @@ class Game:
                     WIDTH = event.w
                     HEIGHT = event.h
                     self.screen = pg.display.set_mode((event.w,event.h),RESIZABLE)
-
-            delta = 1 / float(time)
+            
+            #delta = 1 / float(time)
+            delta = (t - getTicksLastFrame) / 1000.0
+            getTicksLastFrame = t
             self.scene_manager.update(delta)
             self.scene_manager.render()
             self.scene_manager.input(events)
@@ -41,7 +47,9 @@ class Game:
                 fps_text = font.render(fps, 1, WHITE)
                 self.screen.blit(fps_text, (10,0))
 
-
+                delta = str(delta)
+                delta_text = font.render(delta, 1, WHITE)
+                self.screen.blit(delta_text, (100,0))
 
             pg.display.flip()
         
