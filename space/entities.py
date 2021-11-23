@@ -77,13 +77,17 @@ class KineticShip(DynamicBody):
     def __init__(self, points, mass: float, moment: float, coll_type: int, color: Tuple, scene):
         DynamicBody.__init__(self, points, mass, moment, coll_type, color, scene)
         
+        self.comp_cargo = components.Cargo(self.message_board, self)
         self.comp_modules = components.ModuleController(self.message_board, self)
+        self.message_board.register(self.comp_cargo.notified)
+
         self.interact_sensor = pm.Circle(self.body, max(self.rect.size) + 10)
+        self.interact_sensor.collision_type = collision_type["sensor"]
+        self.interact_sensor.parent = self
         self.interact_sensor.sensor = True
-        self.scene.space.add(self.interact_sensor)
-        
+        self.to_add_space.append(self.interact_sensor)
         # Components
-        
+
     def update(self, delta):
         super().update(delta)
         self.comp_modules.update(delta)
@@ -131,4 +135,7 @@ class Item(DynamicBody):
         coll_type = collision_type["loot"]
         super().__init__(((0, 8), (4, 0), (8, 8)), 0.5, 0.1, coll_type, BLUE, scene)
         
+    def add_to_inventory(self, inventory):
+        self.scene.systems.remove_entity(self)
+        inventory.add_to_cargo(self)
 

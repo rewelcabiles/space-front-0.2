@@ -11,12 +11,21 @@ class Collision:
         self.system = self.scene.systems
         
         self.space.add_collision_handler(collision_type["ship"], collision_type["debris"]).begin = self.ship_collides
-        self.space.add_collision_handler(collision_type["sensor"], collision_type["interactable"]).begin = self.sensor_detect
-        
+        self.space.add_collision_handler(collision_type["sensor"], collision_type["loot"]).begin = self.pick_up_item
+
         self.space.add_wildcard_collision_handler(collision_type["projectile"]).begin = self.projectile_hit
 
-    def sensor_detect(self, arbiter, space, data):
-        pass
+    def pick_up_item(self, arbiter, space, data):
+        ship = arbiter.shapes[0].parent
+        loot = arbiter.shapes[1].parent
+        print("WAHOO")
+        ship.message_board.add_to_queue({
+            "subject" : "pick_up",
+            "data" : loot
+        })
+
+        
+        return True
 
     def hit(self, arbiter, space, data):
         if arbiter.is_first_contact:

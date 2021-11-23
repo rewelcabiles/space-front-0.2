@@ -15,7 +15,7 @@ class Systems:
 
     def notified(self, message):
         raise NotImplementedError(("This aint implemented yet"))
-    
+
 
 class HealthSystems(Systems):
     def __init__(self, message_board: MessageBoard, parent, base_hp = 100) -> None:
@@ -58,11 +58,8 @@ class DropTable(Systems):
         to_spawn = []
         
         for v in self.drop_table.values():
-            print("SUCCESS")
             if v["chance"] > random.randint(0, 100):
-                print("SUCCESS1")
                 for a in range(random.randint(1, v["amount"])):
-                    print("woo")
                     to_spawn.append(v["object"](self.parent.scene))
         return to_spawn
 
@@ -144,10 +141,21 @@ class ProjectileWeaponModule(Module):
             
             return [projectile]
         
+        
+            
+
+
+class Cargo(Systems):
+    def __init__(self, message_board: MessageBoard, parent) -> None:
+        super().__init__(message_board, parent)
         self.maximum_weight = 100
         self.current_weight = 0
         self.cargo_hold = []
 
+    def notified(self, message):
+        if message["subject"] == "pick_up":
+            message["data"].add_to_inventory(self)
+
     def add_to_cargo(self, item):
-        self.current_weight += item.weight
+        #self.current_weight += item.weight
         self.cargo_hold.append(item)

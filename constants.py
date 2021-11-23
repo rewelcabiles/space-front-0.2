@@ -9,3 +9,5 @@ HEIGHT = 420
 FPS = 60
 
 SCREEN = None
+
+DEBUG = True

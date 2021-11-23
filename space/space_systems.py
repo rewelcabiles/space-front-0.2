@@ -1,4 +1,4 @@
-from helper_functions import lerp, lerp_angle
+from helper_functions import MessageBoard, lerp, lerp_angle
 from constants import *
 from space.entities import Rock, Player, KineticShip
 import pymunk as pm
