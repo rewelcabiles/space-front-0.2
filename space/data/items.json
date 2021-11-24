@@ -1,0 +1,23 @@
+{
+    "Rocks" : {
+        "weight" : 5,
+        "stackable" : true,
+        "worth" : 2,
+        "category" : "resource",
+        "color" : [0, 255, 0],
+        "meta" : {
+            "type" : "rocks"
+        }
+    },
+
+    "Ochre" : {
+        "weight" : 1,
+        "stackable": true,
+        "worth" : 4,
+        "type" : "resource",
+        "color" : [255, 255, 0],
+        "meta" : {
+            "type" : "Jewels"
+        }
+    }
+}

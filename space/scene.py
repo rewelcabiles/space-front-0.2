@@ -26,32 +26,50 @@ class SpaceScene:
         self.player:KineticShip = self.systems.player.ship
         self.draw_options = pm.pygame_util.DrawOptions(self.screen)
 
-        self.hud = HUD(self.systems.player)
+
+        self.ui_manager =  pygame_gui.UIManager((WIDTH, HEIGHT), "ui/data/base_theme.json")
+        self.hud = HUD(self.ui_manager, self.systems.player)
+        self.ship_menu = ShipMenu(self.ui_manager, self.player)
 
     def input(self, events):
-        keys = pg.key.get_pressed()
+        
         for event in events:
             if event.type == pg.MOUSEBUTTONDOWN:
                 if event.button == 1:
                     self.player.comp_modules.primary_firing = True
 
-            elif event.type == pg.MOUSEBUTTONUP:
+            if event.type == pg.MOUSEBUTTONUP:
                 if event.button == 1:
                     self.player.comp_modules.primary_firing = False
 
-            elif event.type == VIDEORESIZE:
+            if event.type == VIDEORESIZE:
+                self.ui_manager.set_window_resolution((event.w, event.h))
                 self.hud.resize(event.w, event.h)
+                self.ship_menu.resize(event.w, event.h)
+
+            if event.type == KEYDOWN:
+                if event.key == pg.K_TAB:
+                    self.ship_menu.toggle_visible()
+
+
+            
 
             self.hud.ui_manager.process_events(event)
+        if self.ship_menu.visible:
+            return 
+        # Space keys
         vel_x, vel_y = self.player.body.velocity
+        keys = pg.key.get_pressed()
         if keys[pg.K_a]:
-            vel_x -= 0.8
+            vel_x -= self.player.acceleration
         if keys[pg.K_d]:
-            vel_x += 0.8
+            vel_x += self.player.acceleration
         if keys[pg.K_w]:
-            vel_y -= 0.8
+            vel_y -= self.player.acceleration
         if keys[pg.K_s]:
-            vel_y += 0.8
+            vel_y += self.player.acceleration
+            
+
         self.player.body.velocity = (vel_x, vel_y)
     
 

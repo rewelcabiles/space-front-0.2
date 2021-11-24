@@ -9,13 +9,48 @@ import pymunk as pm
 from space import components
 import math
 import random
+import json
 
+
+
+class EntityLoader:
+    with open("space/data/ships.json") as f:
+        ship_data = json.load(f)
+
+    with open("space/data/items.json") as f:
+        item_data = json.load(f)
+    
+    def load_items(name):
+        if name in EntityLoader.item_data.keys():
+            data = EntityLoader.item_data[name]
+            if data["meta"]["type"] == "rocks":
+                points = generate_points(7, 1.4, random.randrange(4, 9))
+            else:
+                points = None
+            new_item = Item(name, points, data["color"])
+            for k, v in data.items():
+                new_item.__setattr__(k, v)
+            return new_item
+        else:
+            return ValueError
+
+    def load_ship(name):
+        if name in EntityLoader.ship_data.keys():
+            data = EntityLoader.ship_data[name]
+            new_ship = KineticShip(data["points"], data["mass"], data["moment"], data["color"])
+            new_ship.max_velocity = data["max_speed"]
+            new_ship.acceleration = data["acceleration"]
+            new_ship.turn_speed = data["turn_speed"] / 200
+            return new_ship
+        else:
+            raise ValueError
+    
 
 class Player:
     def __init__(self, scene):
         self.message_board = MessageBoard()
         self.scene = scene
-        self.ship = None
+        self.ship :KineticShip = None
 
     def input(self, events):
         pass
@@ -28,8 +63,7 @@ class Player:
 
 
 class DynamicBody(pg.sprite.Sprite):
-    def __init__(self, points, mass: float, moment: float, coll_type: int, color: Tuple, scene):
-        self.scene = scene
+    def __init__(self, points, mass: float, moment: float, coll_type: int, color: Tuple):
         pg.sprite.Sprite.__init__(self)
         self.shape, self.image, self.body = create_poly_sprite( pm.Body(mass, moment, body_type = pm.Body.DYNAMIC), points)
         self.shape.collision_type = coll_type
@@ -43,20 +77,27 @@ class DynamicBody(pg.sprite.Sprite):
         self.comp_health = components.HealthSystems(self.message_board, self)
         self.message_board.register(self.comp_health.notified)
         self.message_board.register(self.notified)
-
-        self.systems_message_board = None
+        self.entity_id = None
+        self.systems_message_board:MessageBoard = None
         self.to_add_space = [self.shape, self.body]
 
     def notified(self, message):
         if message["subject"] == "died":
             drops = self.comp_drop_table.create_drops()
-            for d in drops:
-                d.body.position = self.body.position
-                d.body.apply_impulse_at_local_point((random.randint(-6, 6), random.randint(-6, 6)), (0, 0))
-                self.scene.systems.add_entity(d)
-            self.scene.systems.remove_entity(self)
-
-
+            for d in drops: 
+                nx, ny = self.body.position
+                d.body.position = (random.randint(-30, 30) + nx, random.randint(-20, 20) + ny)
+                d.body.apply_impulse_at_local_point((random.randint(-9, 9), random.randint(-9, 9)), (0, 0))
+                self.systems_message_board.add_to_queue({
+                    "subject" : "add_entity",
+                    "entity" : d
+                })
+            self.systems_message_board.add_to_queue({
+                "subject" : "remove_entity",
+                "entity" : self,
+                "perm" : False
+            })
+        
 
     def set_image(self, image):
         self.image = image
@@ -74,13 +115,16 @@ class DynamicBody(pg.sprite.Sprite):
 
 
 class KineticShip(DynamicBody):
+    def __init__(self, points, mass: float, moment: float, color: Tuple):
+        DynamicBody.__init__(self, points, mass, moment, collision_type["ship"], color)
+        self.acceleration = 4
         self.turn_speed = 0.08
-        
+
         self.comp_cargo = components.Cargo(self.message_board, self)
         self.comp_modules = components.ModuleController(self.message_board, self)
         self.message_board.register(self.comp_cargo.notified)
-
-        self.interact_sensor = pm.Circle(self.body, max(self.rect.size) + 10)
+        
+        self.interact_sensor = pm.Circle(self.body, max(self.rect.size) + 4)
         self.interact_sensor.collision_type = collision_type["sensor"]
         self.interact_sensor.parent = self
         self.interact_sensor.sensor = True
@@ -93,45 +137,49 @@ class KineticShip(DynamicBody):
 
     def face_towards(self, face_point):
         mX, mY = face_point
-        goal_angle = -math.atan2(self.body.position.y - mY, mX - self.body.position.x) + math.radians(90)
+        goal_angle = -math.atan2(self.body.position.y - mY, mX - self.body.position.x)
         if self.body.angle != goal_angle:
-            self.body.angle = lerp_angle(self.body.angle, goal_angle, 0.1)
+            self.body.angle = lerp_angle(self.body.angle, goal_angle, self.turn_speed)
 
 
 class Projectile(DynamicBody):
-    def __init__(self, scene):
-        points = [(0, 8), (4, 0), (8, 8), (4, 16)]
-        DynamicBody.__init__(self, points, 0.5, 2, collision_type["projectile"], WHITE, scene)
+    def __init__(self):
+        points = [(0, -4), (12, -4), (12, 4), (0, 4)]
+        DynamicBody.__init__(self, points, 0.5, 2, collision_type["projectile"], WHITE)
         self.max_velocity = 5000
-        self.damage = 4
+        self.damage = 8
 
 
 
 class Rock (DynamicBody):
-    def __init__(self, scene):
+    def __init__(self):
         self.size = random.randrange(30, 70)
-        points = self.generate_points(self.size, 6, random.randrange(6, 15))
-        DynamicBody.__init__(self, points, self.size * 1.2, 5000, collision_type["debris"], GREEN, scene)
-        self.comp_drop_table.add_to_drop_table("rock", Item, 100, 6)
+        points = generate_points(self.size, 6, random.randrange(6, 15))
+        DynamicBody.__init__(self, points, self.size * 1.2, 5000, collision_type["debris"], GREEN)
+        self.comp_drop_table.add_to_drop_table("Rocks", 100, 6)
+        self.comp_drop_table.add_to_drop_table("Ochre", 40, 10)
         self.comp_health.current_health = 50
         self.comp_health.health_capacity = 50
 
-    
-
-    def generate_points(self, mean_radius, sigma_radius, num_points):
-        points = []
-        for theta in linspace(0, 2*math.pi - (2*math.pi/num_points), num_points):
-            radius = random.gauss(mean_radius, sigma_radius)
-            x = mean_radius + 20 + radius * math.cos(theta)
-            y = mean_radius + 20 + radius * math.sin(theta)
-            points.append([x,y])
-        return points
+def generate_points(mean_radius, sigma_radius, num_points):
+    points = []
+    for theta in linspace(0, 2*math.pi - (2*math.pi/num_points), num_points):
+        radius = random.gauss(mean_radius, sigma_radius)
+        x = mean_radius + 20 + radius * math.cos(theta)
+        y = mean_radius + 20 + radius * math.sin(theta)
+        points.append([x,y])
+    return points
 
 
 
 class Item(DynamicBody):
     def __init__(self, name, points, color):
         coll_type = collision_type["loot"]
+        self.name = name
+        self.stackable = True
+        self.amount = 1
+        if points == None:
+            points = [(0, 0), (8, 4), (0, 8)]
         super().__init__(points, 0.5, 0.1, coll_type, color)
         
     def add_to_inventory(self, inventory):

@@ -18,18 +18,12 @@ class Collision:
     def pick_up_item(self, arbiter, space, data):
         ship = arbiter.shapes[0].parent
         loot = arbiter.shapes[1].parent
-        print("WAHOO")
         ship.message_board.add_to_queue({
             "subject" : "pick_up",
             "data" : loot
         })
 
         
-        return True
-
-    def hit(self, arbiter, space, data):
-        if arbiter.is_first_contact:
-            print([[i.parent for i in arbiter.shapes]])
         return True
 
     def ship_collides(self, arbiter, space, data):
@@ -61,7 +55,12 @@ class Collision:
                 "subject" : "take_damage",
                 "damage" : projectile.damage
             })
-            self.scene.systems.remove_entity(projectile)
+
+            self.scene.systems.message_board.add_to_queue({
+                "subject": "remove_entity",
+                "entity" : projectile,
+                "perm" : True
+            })
         
 
             

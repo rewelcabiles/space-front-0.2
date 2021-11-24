@@ -12,6 +12,10 @@ class Systems:
         self.message_board = MessageBoard()
         self.message_board.register(self.notified)
 
+        self.entity_dict = {}
+        self.id_iter = 0
+        self.reclaimable_id = []
+
         # GROUPS
         self.all_sprites = pg.sprite.Group()
         self.debris = pg.sprite.Group()
@@ -19,14 +23,7 @@ class Systems:
 
         # PLAYER SETUP
         self.player = Player(scene)
-        self.player.ship = KineticShip(
-            [(0,50), (25,40), (50,50), (25, 0)],
-            5,
-            100,
-            collision_type["ship"],
-            RED,
-            scene
-        )
+        self.player.ship = EntityLoader.load_ship("Nem-1")
         self.player.ship.parent = self.player
         self.scene.camera.follow(self.player.ship)
         self.add_entity(self.player.ship)
@@ -38,18 +35,32 @@ class Systems:
 
 
     def notified(self, message):
-        print(message)
         if message["subject"] == "add_entity":
             self.add_entity(message["entity"])
+        elif message["subject"] == "remove_entity":
+            self.remove_entity(message["entity"], message["perm"])
+
+    def new_entity_id(self):
+        if self.reclaimable_id:
+            return self.reclaimable_id.pop(0)
+        else:
+            self.id_iter += 1
+            return self.id_iter
 
     def add_entity(self, entity):
         entity.systems_message_board = self.message_board
+        entity.entity_id = self.new_entity_id()
         self.scene.space.add(*entity.to_add_space)
         self.all_sprites.add(entity)
 
-    def remove_entity(self, entity):
+    def remove_entity(self, entity, perm=False):
         self.scene.space.remove(*entity.to_add_space)
         entity.kill()
+        if perm:
+            self.reclaimable_id.append(entity.entity_id)
+            del entity
+        
+        
 
     def update(self, delta):
         self.all_sprites.update(delta)

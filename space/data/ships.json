@@ -1,0 +1,12 @@
+{
+    "Nem-1" : {
+        "class" : "frigate",
+        "max_speed" : 140,
+        "acceleration" : 0.34,
+        "turn_speed" : 4,
+        "mass" : 2,
+        "moment" : 4,
+        "color" : [255, 55, 0],
+        "points" : [[0,0],[50,25],[0,50],[15,25]]
+    }
+}

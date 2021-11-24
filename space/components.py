@@ -47,9 +47,8 @@ class DropTable(Systems):
         super().__init__(message_board, parent)
         self.drop_table = {} # name : {object, chance, amount}
 
-    def add_to_drop_table(self, name, object, chance, amount):
+    def add_to_drop_table(self, name, chance, amount):
         self.drop_table[name] = {
-            "object" : object,
             "chance" : chance,
             "amount" : amount
         }
@@ -57,9 +56,10 @@ class DropTable(Systems):
     def create_drops(self):
         to_spawn = []
         
-        for v in self.drop_table.values():
+        for k, v in self.drop_table.items():
             if v["chance"] > random.randint(0, 100):
                 for a in range(random.randint(1, v["amount"])):
+                    to_spawn.append(EntityLoader.load_items(k))
         print(to_spawn)
         return to_spawn
 
@@ -118,24 +118,23 @@ class ProjectileWeaponModule(Module):
     def update(self, delta):
         if not self.can_fire:
             self.fire_rate_cd += 1 * delta
-            print(self.fire_rate_cd)
             if self.fire_rate_cd >= self.fire_rate:
-                print("CAN FIRE NOW")
                 self.can_fire = True
 
     def fire(self):
         if self.can_fire:
             self.can_fire = False
             self.fire_rate_cd = 0
+
             projectile = Projectile()
             projectile.parent = self.module_controller.parent
             projectile.body.position = projectile.parent.body.position
             projectile.body.angle = projectile.parent.body.angle
             
-            speed_x = 120 * math.cos(projectile.parent.body.angle - math.radians(90))
-            speed_y = 120 * math.sin(projectile.parent.body.angle - math.radians(90))
+            speed_x = 120 * math.cos(projectile.parent.body.angle)
+            speed_y = 120 * math.sin(projectile.parent.body.angle)
 
-            projectile.body.apply_impulse_at_local_point((0, -355), (0, 0))
+            projectile.body.apply_impulse_at_local_point((355, 0), (0, 0))
             projectile.vel_x = speed_x
             projectile.vel_y = speed_y
             
@@ -144,18 +143,31 @@ class ProjectileWeaponModule(Module):
         
             
 
-
 class Cargo(Systems):
     def __init__(self, message_board: MessageBoard, parent) -> None:
         super().__init__(message_board, parent)
         self.maximum_weight = 100
         self.current_weight = 0
-        self.cargo_hold = []
+        self.cargo_hold = {}
+        self.cargo_hold_names = {}
 
     def notified(self, message):
         if message["subject"] == "pick_up":
             message["data"].add_to_inventory(self)
 
     def add_to_cargo(self, item):
-        #self.current_weight += item.weight
-        self.cargo_hold.append(item)
+
+        if item.name not in self.cargo_hold_names:
+            self.cargo_hold[item.entity_id] = item
+            self.cargo_hold_names[item.name] = item
+
+        elif item.stackable:
+            self.cargo_hold_names[item.name].amount += 1
+
+        else:
+            self.cargo_hold[item.entity_id] = item
+
+
+    def get_item_list(self):
+        print(self.cargo_hold)
+        return ["{}x   {}".format(x.amount, x.name) for x in self.cargo_hold.values()]
