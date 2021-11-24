@@ -32,7 +32,7 @@ class Systems:
         self.add_entity(self.player.ship)
 
         for r in range(16):
-            new_block = Rock(scene)
+            new_block = Rock()
             new_block.shape.body.position = (random.randrange(WIDTH * 2), random.randrange(HEIGHT * 2))
             self.add_entity(new_block)
 

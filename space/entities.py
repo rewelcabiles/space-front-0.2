@@ -74,8 +74,7 @@ class DynamicBody(pg.sprite.Sprite):
 
 
 class KineticShip(DynamicBody):
-    def __init__(self, points, mass: float, moment: float, coll_type: int, color: Tuple, scene):
-        DynamicBody.__init__(self, points, mass, moment, coll_type, color, scene)
+        self.turn_speed = 0.08
         
         self.comp_cargo = components.Cargo(self.message_board, self)
         self.comp_modules = components.ModuleController(self.message_board, self)
@@ -131,11 +130,15 @@ class Rock (DynamicBody):
 
 
 class Item(DynamicBody):
-    def __init__(self, scene):
+    def __init__(self, name, points, color):
         coll_type = collision_type["loot"]
-        super().__init__(((0, 8), (4, 0), (8, 8)), 0.5, 0.1, coll_type, BLUE, scene)
+        super().__init__(points, 0.5, 0.1, coll_type, color)
         
     def add_to_inventory(self, inventory):
-        self.scene.systems.remove_entity(self)
+        self.systems_message_board.add_to_queue({
+            "subject" : "remove_entity",
+            "entity" : self,
+            "perm" : False
+        })
         inventory.add_to_cargo(self)
 

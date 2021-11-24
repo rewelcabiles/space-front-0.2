@@ -60,7 +60,7 @@ class DropTable(Systems):
         for v in self.drop_table.values():
             if v["chance"] > random.randint(0, 100):
                 for a in range(random.randint(1, v["amount"])):
-                    to_spawn.append(v["object"](self.parent.scene))
+        print(to_spawn)
         return to_spawn
 
         
@@ -127,7 +127,7 @@ class ProjectileWeaponModule(Module):
         if self.can_fire:
             self.can_fire = False
             self.fire_rate_cd = 0
-            projectile = Projectile(self.module_controller.parent.scene)
+            projectile = Projectile()
             projectile.parent = self.module_controller.parent
             projectile.body.position = projectile.parent.body.position
             projectile.body.angle = projectile.parent.body.angle
