@@ -1,6 +1,7 @@
 import pygame_gui
 import pygame as pg
-from constants import *
+from game.constants import *
+from space.entities import Player
 from ui.ui_manager import *
 class HUD:
     def __init__(self, player) -> None:

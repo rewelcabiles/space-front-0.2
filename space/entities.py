@@ -1,8 +1,8 @@
 from abc import abstractmethod
 from typing import List, Tuple
-from constants import *
+from game.constants import *
 from pymunk import Vec2d
-from helper_functions import create_poly_sprite, linspace, lerp_angle, clamp, MessageBoard
+from game.helper_functions import create_poly_sprite, linspace, lerp_angle, clamp, MessageBoard
 from space.collision import collision_type
 import pygame as pg
 import pymunk as pm

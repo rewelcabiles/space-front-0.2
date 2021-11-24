@@ -1,6 +1,6 @@
 import pygame as pg
 from pygame.font import SysFont
-from constants import *
+from game.constants import *
 
 TOP_MIDDLE = 0
 TOP_LEFT = 1

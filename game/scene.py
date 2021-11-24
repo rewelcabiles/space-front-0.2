@@ -1,6 +1,6 @@
 import pygame as pg
 from pygame.locals import *
-from constants import *
+from game.constants import *
 from ui.ui_manager import *
 
 class MainMenu:

@@ -1,3 +1,4 @@
+import pygame_gui
 from pymunk import pygame_util
 import pygame as pg
 from pygame.locals import *
@@ -6,9 +7,10 @@ from space.collision import Collision
 from space.components import ModuleController
 from space.entities import KineticShip
 from space.space_systems import Systems
-from constants import *
+from game.constants import *
 from ui.camera import Camera
 from ui.hud import HUD
+from ui.ship_menu import ShipMenu
 
 
 class SpaceScene:

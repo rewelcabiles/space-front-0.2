@@ -1,4 +1,4 @@
-from constants import *
+from game.constants import *
 import pygame as pg
 
 class Camera:

@@ -1,8 +1,8 @@
-from constants import *
+from game.constants import *
 from pygame.locals import *
-from scenes import SceneManager
+from game.scenes import SceneManager
 from space.scene import SpaceScene
-from scene import MainMenu
+from game.scene import MainMenu
 import pygame as pg
 
 

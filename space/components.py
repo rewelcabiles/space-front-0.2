@@ -2,8 +2,8 @@ import pygame as pg
 import pymunk as pm
 import math
 import random
-from helper_functions import MessageBoard
-from space.entities import Projectile
+from game.helper_functions import MessageBoard
+from space.entities import Projectile, EntityLoader
 
 class Systems:
     def __init__(self, message_board: MessageBoard, parent) -> None:

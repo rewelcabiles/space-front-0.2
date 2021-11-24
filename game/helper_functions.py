@@ -1,4 +1,4 @@
-from constants import *
+from game.constants import *
 import pymunk as pm
 import pygame as pg
 import math
