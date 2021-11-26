@@ -11,17 +11,17 @@ from game.constants import *
 from ui.camera import Camera
 from ui.hud import HUD
 from ui.ship_menu import ShipMenu
-
+import time
 
 class SpaceScene:
     def __init__(self, screen):
-        self.screen = screen
+        self.screen :pg.Surface = screen
         self.camera = Camera()
         self.systems = Systems(self)
         self.collisions = Collision(self)
         self.player:KineticShip = self.systems.player.ship
         self.draw_options = pm.pygame_util.DrawOptions(self.screen)
-
+        self.font = pg.font.SysFont("Arial", 18)
 
         self.ui_manager =  pygame_gui.UIManager((WIDTH, HEIGHT), "ui/data/base_theme.json")
         self.hud = HUD(self.ui_manager, self.systems.player)
@@ -64,6 +64,8 @@ class SpaceScene:
             vel_y -= self.player.acceleration
         if keys[pg.K_s]:
             vel_y += self.player.acceleration
+        if keys[pg.K_z]:
+            self.systems.ai[1].request_path(self.player.body.position.x, self.player.body.position.y)
             
 
         self.player.body.velocity = (vel_x, vel_y)
@@ -79,7 +81,23 @@ class SpaceScene:
 
     def render(self):
         self.screen.fill(BLACK)
+        p_coords = str((int(self.player.body.position.x), int(self.player.body.position.y)))
+        asd = self.font.render(p_coords, 1, WHITE)
+        self.screen.blit(asd, (200,0))
         if DEBUG:
             self.systems.space.debug_draw(self.draw_options)
+        if NAV_DEBUG:
+            for s in self.systems.nav_mesh.squares.values():
+                if s.occupied_by == 0:
+                    continue
+                img = pg.Surface(
+                    (self.systems.nav_mesh.square_size,
+                    self.systems.nav_mesh.square_size)
+                    )
+                img.fill(RED)
+                self.screen.blit(img, (
+                    s.x * self.systems.nav_mesh.square_size - self.camera.x,
+                    s.y * self.systems.nav_mesh.square_size - self.camera.y))
+
         self.camera.render(self.screen, self.systems.all_sprites)
         self.hud.ui_manager.draw_ui(self.screen)

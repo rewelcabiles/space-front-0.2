@@ -20,6 +20,28 @@ class MessageBoard():
 		for observer in self.observers:
 			observer(message)
 
+class Timer:
+    def __init__(self, max_time) -> None:
+        self.max_time = max_time
+        self.cur_time = 0
+        self.repeat = False
+        self.call_back = None
+        self.active = False
+
+    def start(self):
+        self.active = True
+        self.cur_time = 0
+
+    def update(self, delta):
+        if self.active:
+            self.cur_time += 1 * delta
+            if self.cur_time >= self.max_time:
+                if not self.repeat:
+                    self.active = False
+                self.cur_time = 0
+                self.call_back()
+
+
 def lerp(a, b, t):
     return a + (b - a) * t
 

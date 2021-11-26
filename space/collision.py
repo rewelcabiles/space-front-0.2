@@ -1,6 +1,8 @@
+
+
 class Collision:
     col_list = [
-        "debris", "player", "projectile", "ship", "loot", "sensor", "interactable"
+        "debris", "player", "projectile", "ship", "loot", "sensor", "interactable", "nav_mesh"
     ]
     for k, v in dict(zip(col_list, range(len(col_list)))).items():
         vars()[k.upper()] = v
@@ -14,6 +16,25 @@ class Collision:
         self.space.add_collision_handler(Collision.SENSOR, Collision.LOOT).begin = self.pick_up_item
 
         self.space.add_wildcard_collision_handler(Collision.PROJECTILE).begin = self.projectile_hit
+
+        self.space.add_wildcard_collision_handler(Collision.NAV_MESH).begin = self.nav_mesh_collide
+        self.space.add_wildcard_collision_handler(Collision.NAV_MESH).separate = self.nav_mesh_separate
+
+    def nav_mesh_separate(self, arbiter, space, data):
+        allowed_collision = [Collision.DEBRIS]
+        if arbiter.shapes[1].collision_type in allowed_collision:
+            arbiter.shapes[0].parent.occupied_by -= 1
+
+        return False
+
+    def nav_mesh_collide(self, arbiter, space, data):
+        allowed_collision = [Collision.DEBRIS]
+        if arbiter.shapes[1].collision_type in allowed_collision:
+            arbiter.shapes[0].parent.occupied_by += 1
+
+        return False
+
+        
 
     def pick_up_item(self, arbiter, space, data):
         ship = arbiter.shapes[0].parent
@@ -44,7 +65,7 @@ class Collision:
         if projectile.parent == other:
             return False
 
-        if arbiter.shapes[1].collision_type == Collision.SENSOR:
+        if arbiter.shapes[1].collision_type in [Collision.SENSOR, Collision.NAV_MESH]:
             return False
 
         if arbiter.is_first_contact:
