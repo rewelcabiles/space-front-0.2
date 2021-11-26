@@ -26,13 +26,11 @@ class HealthSystems(Systems):
 
     def take_damage(self, damage: int) -> None:
         self.current_health -= damage
-        print(self.current_health)
         self.message_board.add_to_queue({
             "subject": "damage_received",
             "damage" : damage
         })
         if self.current_health <= 0:
-            print("DIED1")
             self.message_board.add_to_queue({
               "subject": "died"
             })
@@ -60,7 +58,6 @@ class DropTable(Systems):
             if v["chance"] > random.randint(0, 100):
                 for a in range(random.randint(1, v["amount"])):
                     to_spawn.append(EntityLoader.load_items(k))
-        print(to_spawn)
         return to_spawn
 
         

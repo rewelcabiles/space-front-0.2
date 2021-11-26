@@ -10,4 +10,4 @@ FPS = 60
 
 SCREEN = None
 
-DEBUG = False
+DEBUG = True

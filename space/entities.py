@@ -148,6 +148,7 @@ class Projectile(DynamicBody):
     def __init__(self):
         points = [(0, -4), (12, -4), (12, 4), (0, 4)]
         DynamicBody.__init__(self, points, 0.5, 2, Collision.PROJECTILE, WHITE)
+        self.max_velocity = 400
         self.damage = 8
 
 
