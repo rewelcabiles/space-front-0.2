@@ -15,10 +15,6 @@ from ui.ship_menu import ShipMenu
 
 class SpaceScene:
     def __init__(self, screen):
-        self.space = pm.Space()
-        self.space.gravity = (0, 0)
-        self.space.damping = 0.9
-
         self.screen = screen
         self.camera = Camera()
         self.systems = Systems(self)
@@ -77,14 +73,13 @@ class SpaceScene:
         self.systems.update(delta)
         self.camera.update()
         self.hud.ui_manager.update(delta)
-        self.space.step(delta)
+        
         
         
 
     def render(self):
         self.screen.fill(BLACK)
         if DEBUG:
-            self.space.debug_draw(self.draw_options)
-        
+            self.systems.space.debug_draw(self.draw_options)
         self.camera.render(self.screen, self.systems.all_sprites)
         self.hud.ui_manager.draw_ui(self.screen)
