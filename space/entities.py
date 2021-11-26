@@ -3,13 +3,14 @@ from typing import List, Tuple
 from game.constants import *
 from pymunk import Vec2d
 from game.helper_functions import create_poly_sprite, linspace, lerp_angle, clamp, MessageBoard
-from space.collision import collision_type
 import pygame as pg
 import pymunk as pm
 from space import components
 import math
 import random
 import json
+
+from space.collision import Collision
 
 
 
@@ -37,6 +38,7 @@ class EntityLoader:
     def load_ship(name):
         if name in EntityLoader.ship_data.keys():
             data = EntityLoader.ship_data[name]
+
             new_ship = KineticShip(data["points"], data["mass"], data["moment"], data["color"])
             new_ship.max_velocity = data["max_speed"]
             new_ship.acceleration = data["acceleration"]
@@ -116,7 +118,7 @@ class DynamicBody(pg.sprite.Sprite):
 
 class KineticShip(DynamicBody):
     def __init__(self, points, mass: float, moment: float, color: Tuple):
-        DynamicBody.__init__(self, points, mass, moment, collision_type["ship"], color)
+        DynamicBody.__init__(self, points, mass, moment, Collision.SHIP, color)
         self.acceleration = 4
         self.turn_speed = 0.08
 
@@ -125,7 +127,7 @@ class KineticShip(DynamicBody):
         self.message_board.register(self.comp_cargo.notified)
         
         self.interact_sensor = pm.Circle(self.body, max(self.rect.size) + 4)
-        self.interact_sensor.collision_type = collision_type["sensor"]
+        self.interact_sensor.collision_type = Collision.SENSOR
         self.interact_sensor.parent = self
         self.interact_sensor.sensor = True
         self.to_add_space.append(self.interact_sensor)
@@ -145,8 +147,7 @@ class KineticShip(DynamicBody):
 class Projectile(DynamicBody):
     def __init__(self):
         points = [(0, -4), (12, -4), (12, 4), (0, 4)]
-        DynamicBody.__init__(self, points, 0.5, 2, collision_type["projectile"], WHITE)
-        self.max_velocity = 5000
+        DynamicBody.__init__(self, points, 0.5, 2, Collision.PROJECTILE, WHITE)
         self.damage = 8
 
 
@@ -155,7 +156,7 @@ class Rock (DynamicBody):
     def __init__(self):
         self.size = random.randrange(30, 70)
         points = generate_points(self.size, 6, random.randrange(6, 15))
-        DynamicBody.__init__(self, points, self.size * 1.2, 5000, collision_type["debris"], GREEN)
+        DynamicBody.__init__(self, points, self.size * 1.2, 5000, Collision.DEBRIS, GREEN)
         self.comp_drop_table.add_to_drop_table("Rocks", 100, 6)
         self.comp_drop_table.add_to_drop_table("Ochre", 40, 10)
         self.comp_health.current_health = 50
@@ -174,13 +175,13 @@ def generate_points(mean_radius, sigma_radius, num_points):
 
 class Item(DynamicBody):
     def __init__(self, name, points, color):
-        coll_type = collision_type["loot"]
+        coll_type = Collision.LOOT
         self.name = name
         self.stackable = True
         self.amount = 1
         if points == None:
             points = [(0, 0), (8, 4), (0, 8)]
-        super().__init__(points, 0.5, 0.1, coll_type, color)
+        super().__init__(points, 0.5, 20, coll_type, color)
         
     def add_to_inventory(self, inventory):
         self.systems_message_board.add_to_queue({

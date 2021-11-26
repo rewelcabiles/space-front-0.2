@@ -1,8 +1,8 @@
-
+class Collision:
 col_list = [
     "debris", "player", "projectile", "ship", "loot", "sensor", "interactable"
 ]
-collision_type = dict(zip(col_list, range(len(col_list))))
+        vars()[k.upper()] = v
 
 class Collision:
     def __init__(self, scene):
@@ -48,6 +48,9 @@ class Collision:
         other = arbiter.shapes[1].parent
 
         if projectile.parent == other:
+            return False
+
+        if arbiter.shapes[1].collision_type == Collision.SENSOR:
             return False
 
         if arbiter.is_first_contact:
