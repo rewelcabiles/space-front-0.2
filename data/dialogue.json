@@ -1,0 +1,87 @@
+{
+	"d5abd9d6-565d-4d29-8254-8011d00f5db7": {
+		"type": "Text",
+		"id": "d5abd9d6-565d-4d29-8254-8011d00f5db7",
+		"actor": "Buzz",
+		"name": "Hey! Finally you're awake! C'mon take the helm. I need some shut eye....",
+		"choices": [
+			"606884e2-e87e-4347-8690-922e5919ee1a",
+			"37a5ca50-956f-4b08-81f7-973c89c1ffc7"
+		]
+	},
+	"606884e2-e87e-4347-8690-922e5919ee1a": {
+		"type": "Choice",
+		"id": "606884e2-e87e-4347-8690-922e5919ee1a",
+		"name": "",
+		"title": "What were we doing again?",
+		"next": "651418f1-315e-48b9-a9a0-7ba798a58d16"
+	},
+	"651418f1-315e-48b9-a9a0-7ba798a58d16": {
+		"type": "Text",
+		"id": "651418f1-315e-48b9-a9a0-7ba798a58d16",
+		"actor": "Buzz",
+		"name": "I knew you were forgetful, but Uncle literally just gave us the details yesterday! > _ >",
+		"next": "82ca9c3c-2a8f-4e80-a4d6-09d1958be31d"
+	},
+	"37a5ca50-956f-4b08-81f7-973c89c1ffc7": {
+		"type": "Choice",
+		"id": "37a5ca50-956f-4b08-81f7-973c89c1ffc7",
+		"name": "",
+		"title": "Alright gimme the seat.",
+		"next": "82ca9c3c-2a8f-4e80-a4d6-09d1958be31d"
+	},
+	"82ca9c3c-2a8f-4e80-a4d6-09d1958be31d": {
+		"type": "Text",
+		"id": "82ca9c3c-2a8f-4e80-a4d6-09d1958be31d",
+		"actor": "Buzz",
+		"name": "We're here to mine some space rocks buddy, get to it!\n\n",
+		"next": null
+	},
+	"e08e7704-8445-4972-b802-5da6c95d1c42": {
+		"type": "Choice",
+		"id": "e08e7704-8445-4972-b802-5da6c95d1c42",
+		"name": "",
+		"title": "Visit Bobs Ship Parts",
+		"next": "3b3c3f68-1019-46b5-addc-161fb035818c"
+	},
+	"1950d26c-5cb6-414c-84d3-6fda48f842d4": {
+		"type": "Text",
+		"id": "1950d26c-5cb6-414c-84d3-6fda48f842d4",
+		"actor": "Narrator",
+		"name": "You step foot on the Hangar.\n",
+		"choices": [
+			"e08e7704-8445-4972-b802-5da6c95d1c42"
+		]
+	},
+	"3b3c3f68-1019-46b5-addc-161fb035818c": {
+		"type": "Text",
+		"id": "3b3c3f68-1019-46b5-addc-161fb035818c",
+		"actor": "Narrator",
+		"name": "The bell rings as you push open the door. Inside shadows dance around the room cast by the various piles of ship parts strewn over tables and boxes. A single lamp bulb dangles from the ceiling at the center of the room. You see Bob standing behind the counter.",
+		"choices": [
+			"1d63b40d-de29-49b2-9b41-579d49c2c366",
+			"c7fbcea8-c176-44f1-8c61-cafae68681e1"
+		]
+	},
+	"1d63b40d-de29-49b2-9b41-579d49c2c366": {
+		"type": "Choice",
+		"id": "1d63b40d-de29-49b2-9b41-579d49c2c366",
+		"name": "",
+		"title": "Head back to the hangar",
+		"next": "1950d26c-5cb6-414c-84d3-6fda48f842d4"
+	},
+	"c7fbcea8-c176-44f1-8c61-cafae68681e1": {
+		"type": "Choice",
+		"id": "c7fbcea8-c176-44f1-8c61-cafae68681e1",
+		"name": "",
+		"title": "Lemme see you got",
+		"next": "4fb21851-1fab-4725-8a21-b43268e66b44"
+	},
+	"4fb21851-1fab-4725-8a21-b43268e66b44": {
+		"type": "Set",
+		"id": "4fb21851-1fab-4725-8a21-b43268e66b44",
+		"variable": "view_shop",
+		"value": "bobs_wares",
+		"next": null
+	}
+}

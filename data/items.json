@@ -5,6 +5,7 @@
         "worth" : 2,
         "category" : "resource",
         "color" : [0, 255, 0],
+        "image" : "rock_drop_1.png",
         "meta" : {
             "type" : "rocks"
         }
@@ -16,6 +17,7 @@
         "worth" : 4,
         "type" : "resource",
         "color" : [255, 255, 0],
+        "image" : "rock_drop_1.png",
         "meta" : {
             "type" : "Jewels"
         }

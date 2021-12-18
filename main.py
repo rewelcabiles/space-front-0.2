@@ -1,8 +1,8 @@
 from game.constants import *
 from pygame.locals import *
 from game.scenes import SceneManager
-from space.scene import SpaceScene
-from game.scene import MainMenu
+
+#from game.scene import MainMenu
 import pygame as pg
 
 
@@ -15,6 +15,7 @@ class Game:
         self.game_running = True
         self.debug_mode = True
         self.scene_manager = SceneManager()
+        from space.scene import SpaceScene
         self.scene_manager.new_scene(SpaceScene(self.screen))
         
     def run(self):
@@ -36,7 +37,6 @@ class Game:
                     HEIGHT = event.h
                     self.screen = pg.display.set_mode((event.w,event.h),RESIZABLE)
             
-            #delta = 1 / float(time)
             delta = (t - getTicksLastFrame) / 1000.0
             getTicksLastFrame = t
             self.scene_manager.update(delta)

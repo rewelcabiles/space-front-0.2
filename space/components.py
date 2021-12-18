@@ -1,30 +1,33 @@
-import pygame as pg
-import pymunk as pm
+
 import math
 import random
-from game.helper_functions import MessageBoard
+from game.helper_functions import MessageBoard, Timer
 from space.entities import Projectile, EntityLoader
 
 class Systems:
-    def __init__(self, message_board: MessageBoard, parent) -> None:
+    def __init__(self, parent):
         self.parent = parent
-        self.message_board = message_board
+        self.message_board = self.parent.message_board
+        self.message_board.register(self.notified)
     
     def notify(self, message):
         self.message_board.add_to_queue(message)
 
     def notified(self, message):
-        raise NotImplementedError(("This aint implemented yet"))
+        pass
 
 
 class HealthSystems(Systems):
-    def __init__(self, message_board: MessageBoard, parent, base_hp = 100) -> None:
-        super().__init__(message_board, parent)
+    def __init__(self, parent, base_hp = 100) -> None:
+        super().__init__(parent)
         self.base_hp = base_hp
         self.health_capacity = base_hp
         self.current_health = base_hp
+        self.invulnerable = False
 
     def take_damage(self, damage: int) -> None:
+        if self.invulnerable:
+            return
         self.current_health -= damage
         self.message_board.add_to_queue({
             "subject": "damage_received",
@@ -41,8 +44,8 @@ class HealthSystems(Systems):
 
     
 class DropTable(Systems):
-    def __init__(self, message_board: MessageBoard, parent) -> None:
-        super().__init__(message_board, parent)
+    def __init__(self, parent) -> None:
+        super().__init__(parent)
         self.drop_table = {} # name : {object, chance, amount}
 
     def add_to_drop_table(self, name, chance, amount):
@@ -60,71 +63,56 @@ class DropTable(Systems):
                     to_spawn.append(EntityLoader.load_items(k))
         return to_spawn
 
-        
-class ModuleController(Systems):
-    PRIMARY = 1
-    SECONDARY = 2
-    def __init__(self, message_board: MessageBoard, parent) -> None:
-        super().__init__(message_board, parent)
+'''
+Module System Plan:
+======================
+SHIP:
+    Ships have a certain amount of "Module Space"
+    Module space increases with Ship class
+    Module space varies with ship archetype (+/- module space)
+    Any amount of Modules can be installed as long as there is module space on the ship.
 
-        self.primary_firing = False
-        self.secondary_firing = False
+MODULE:
+    Modules are either passive or active
+    Active modules are activated via M1, M2, or 1 - 0
+    Some Modules may draw power from the ship power supply
 
-        self.primary_module = ProjectileWeaponModule(self)
-        self.secondary_module = None
 
-    def update(self, delta):
-        if self.primary_module != None:
-            if self.primary_firing:
-                self.activate_module(ModuleController.PRIMARY)
-            self.primary_module.update(delta)
+'''
 
-        if self.secondary_module != None:
-            if self.secondary_module:
-                self.activate_module(ModuleController.SECONDARY)
-            self.secondary_module.update(delta)
 
-    def activate_module(self, module):
-        if module == ModuleController.PRIMARY and self.primary_module != None:
-            projectiles = self.primary_module.fire()
-            if projectiles:
-                for p in projectiles:
-                    self.parent.systems_message_board.add_to_queue({
-                        "subject" : "add_entity",
-                        "entity" : p
-                    })
-
-        elif module == ModuleController.SECONDARY:
-            pass
             
 
 class Module:
-    def __init__(self, module_controller:ModuleController) -> None:
-        self.module_controller = module_controller
+    def __init__(self, d):
+        self.__dict__ = d
+        self.name = None
+        for k, v in self.type_data.items():
+            setattr(self, k, v)
 
-    def fire(self):
-        pass
-
-class ProjectileWeaponModule(Module):
-    def __init__(self, module_controller :ModuleController) -> None:
-        super().__init__(module_controller)
-        self.fire_rate = 0.6
-        self.fire_rate_cd = 0
-        self.can_fire = True
+        self.module_controller = None
+        self.module_space_requirement = 1
+        self.modifies = {}
+        self.passive = False
 
     def update(self, delta):
-        if not self.can_fire:
-            self.fire_rate_cd += 1 * delta
-            if self.fire_rate_cd >= self.fire_rate:
-                self.can_fire = True
+        if self.type == "projectile_weapon":
+            if not self.can_fire:
+                self.fire_rate_cd += 1 * delta
+                if self.fire_rate_cd >= self.fire_rate:
+                    self.can_fire = True
 
-    def fire(self):
+    def activate(self):
+        if self.type == "projectile_weapon":
+            self.activate_projectile_weapon()
+
+    def activate_projectile_weapon(self):
+        
         if self.can_fire:
             self.can_fire = False
             self.fire_rate_cd = 0
-
-            projectile = Projectile()
-            projectile.parent = self.module_controller.parent
+            print(self.module_controller.parent.name)
+            projectile = Projectile(self.module_controller.parent, self.proj_damage, self.proj_speed)
             projectile.body.position = projectile.parent.body.position
             projectile.body.angle = projectile.parent.body.angle
             
@@ -135,14 +123,68 @@ class ProjectileWeaponModule(Module):
             projectile.vel_x = speed_x
             projectile.vel_y = speed_y
             
-            return [projectile]
+            self.module_controller.parent.systems_message_board.add_to_queue({
+                "subject" : "add_entity",
+                "entity" : projectile
+            })
+
+class ModuleController(Systems):
+    def __init__(self, parent):
+        super().__init__(parent)
+        
+        self.max_module_space = 10
+        self.cur_module_space = 0
+        self.installed_modules = []
         
         
+    def install_module(self, module:Module):
+        print(f'{self.parent.name=}, {module.name=}')
+        if not module.module_space_requirement + self.cur_module_space > self.max_module_space:
+            self.cur_module_space += module.module_space_requirement
+            module.module_controller = self
+            self.installed_modules.append(module)
+            print(f'{self.parent.name=}, {module.name=}')
+            for mod, value in module.modifies.items():
+                self.message_board.add_to_queue({
+                    "subject" : "modify_attribute",
+                    "attribute" : mod,
+                    "value" : value
+                })
+            
+
+    def remove_module(self, module :Module):
+        self.installed_modules.remove(module)
+        module.module_controller = None
+        self.cur_module_space -= module.module_space_requirement
+        for mod, value in module.modifies.items():
+            self.message_board.add_to_queue({
+                "subject" : "modify_attribute",
+                "attribute" : mod,
+                "value" : -value
+            })
+
+    def notified(self, message):
+        if message["subject"] == "install_module":
+            self.install_module(message["module"])
+        
+        elif message["subject"] == "remove_module":
+            self.remove_module(message["module"])
+
+    def update(self, delta):
+        for mods in self.installed_modules:
+            if mods != None:
+                mods.update(delta)
+        
+        if self.parent.action_map["module_1"] and not self.installed_modules[0] is None:
+            self.installed_modules[0].activate()
+
+        
+
             
 
 class Cargo(Systems):
-    def __init__(self, message_board: MessageBoard, parent) -> None:
-        super().__init__(message_board, parent)
+    def __init__(self, parent) -> None:
+        super().__init__(parent)
         self.maximum_weight = 100
         self.current_weight = 0
         self.cargo_hold = {}

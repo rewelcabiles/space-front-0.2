@@ -71,7 +71,6 @@ def create_poly_sprite(body, points):
     
     shape = pm.Poly(body, pm_points)
     image = pg.Surface((hx , hy), pg.SRCALPHA, 32 ).convert_alpha()
-
     return shape, image, body
 
 def linspace(start, stop, num_steps):

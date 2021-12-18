@@ -1,40 +1,31 @@
 import pygame as pg
 from pygame.locals import *
+import pygame_gui
+from pygame_gui.ui_manager import UIManager
 from game.constants import *
-from ui.ui_manager import *
+from ui.dialog import DialogTree
 
 class MainMenu:
     def __init__(self, screen):
         self.screen = screen
-        self.manager = UIManager(WIDTH, HEIGHT)
-        listpanel = ListPanel(self.manager, WIDTH / 2, 20)
-        
-        button = UIButton(
-            self.manager,
-            0, 0,
-            "Play"
-        )
-
-        button.anchor = MIDDLE_MIDDLE
-        button2 = UIButton(
-            self.manager,
-            0, 200,
-            "Load"
-        )
-        button2.anchor = MIDDLE_MIDDLE
+        self.manager  = pygame_gui.UIManager((WIDTH, HEIGHT))
+        self.dialog = DialogTree(self.manager)
         
        
     def input(self, events):
-        pass
+        for event in events:
+            if event.type == pg.USEREVENT:
+                if event.user_type == pygame_gui.UI_TEXT_BOX_LINK_CLICKED:
+                    self.dialog.goto_id(event.link_target)
+            self.manager.process_events(event)
 
 
     def update(self, delta):
-        pass
+        self.manager.update(delta)
 
         
 
     def render(self):
         self.screen.fill(BLACK)
-        self.manager.render(self.screen)
-
+        self.manager.draw_ui(self.screen)
 

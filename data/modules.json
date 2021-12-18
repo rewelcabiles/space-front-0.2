@@ -1,0 +1,17 @@
+{
+    "Projectile Cannon Mk1" : {
+        "passive" : false,
+        "module_space_requirement" : 4,
+        "modifies" : {
+            "max_hp" : 5
+        },
+        "type" : "projectile_weapon",
+        "type_data" : {
+                "can_fire" : false,
+                "fire_rate" : 0.4,
+                "fire_rate_cd" : 0,
+                "proj_damage" : 4,
+                "proj_speed" : 400
+        }
+    }
+}

@@ -1,15 +1,18 @@
 from functools import cache
 from typing import Set
 from pymunk import body
-from game.helper_functions import MessageBoard
+from game.helper_functions import MessageBoard, Timer
 from game.constants import *
+from game.player import Player
 from space.collision import Collision
-from space.entities import DynamicBody, Rock, Player, KineticShip, EntityLoader
+from space.entities import DynamicBody, Rock, KineticShip, EntityLoader, SpaceStation
 from space.npc import AI
 import pygame as pg
 import pymunk as pm
 import random
 
+from ui.ship_menu import StationMenu
+#from space.scene import SpaceScene
 class Systems:
     def __init__(self, scene):
         self.scene = scene
@@ -18,43 +21,58 @@ class Systems:
         self.space.gravity = (0, 0)
         self.space.damping = 0.9
 
+        self.z_list = {}
+
         self.message_board = MessageBoard()
         self.message_board.register(self.notified)
-
-        self.nav_mesh = NavMesh(self.space)
 
         self.entity_dict = {}
         self.id_iter = 0
         self.reclaimable_id = []
+        self.to_render = []
         self.ai = []
 
         # GROUPS
         self.all_sprites = pg.sprite.Group()
-        self.debris = pg.sprite.Group()
-        self.faces_cursor_group = pg.sprite.Group()
-
+        self.nav_mesh = NavMesh(self.space, self.all_sprites)
         # PLAYER SETUP
         self.player = Player(scene)
         self.player.ship = EntityLoader.load_ship("Nem-1")
+        self.player.ship.name = "PLAYER"
+        print(self.player.ship)
+        new_mod = EntityLoader.load_module("Projectile Cannon Mk1")
+        new_mod.name = "PLAYER MOD"
+        self.player.ship.comp_modules.install_module(
+            new_mod
+        )
+        
         self.player.ship.body.position = (100, 100)
         self.player.ship.parent = self.player
         self.scene.camera.follow(self.player.ship)
-        
+        self.to_render += self.player.ship.to_render
         self.ai.append(self.player)
         self.add_entity(self.player.ship)
 
         # Random enemy
         new_npc = AI(EntityLoader.load_ship("Nem-1"))
+        new_npc.ship.name = "AI"
         new_npc.ship.body.position = (35, 64)
+        print(new_npc.ship.name)
+        new_mod = EntityLoader.load_module("Projectile Cannon Mk1")
+        new_mod.name = "AI MOD"
+        new_npc.ship.comp_modules.install_module(new_mod)
         self.ai.append(new_npc)
         self.add_entity(new_npc.ship)
         for r in range(16):
             new_block = Rock()
             new_block.shape.body.position = (random.randrange(200, WIDTH * 2), random.randrange(HEIGHT * 2))
             self.add_entity(new_block)
+        
+        station_1 = SpaceStation()
+        station_1.body.position = (600, 600)
+        self.add_entity(station_1)
 
-        self.space.add(*[square.body for square in self.nav_mesh.squares.values()])
-        self.space.add(*[square.shape for square in self.nav_mesh.squares.values()])
+
 
     def notified(self, message):
         subject = message["subject"]
@@ -65,6 +83,12 @@ class Systems:
         elif subject == "request_coordinates":
             path = self.nav_mesh.a_star(message["start"], message["end"])
             message["callback"](path)
+        elif subject == "space_station_accessed":
+            station_id = message["station_id"]
+            station_menu = StationMenu(self.scene.ui_manager,self.player)
+            self.scene.dialog.goto_id("1950d26c-5cb6-414c-84d3-6fda48f842d4")
+
+
 
     def new_entity_id(self):
         if self.reclaimable_id:
@@ -76,6 +100,11 @@ class Systems:
     def add_entity(self, entity):
         entity.systems_message_board = self.message_board
         entity.entity_id = self.new_entity_id()
+        z_index = entity.z_index
+        if not z_index in self.z_list.keys():
+            self.z_list[z_index] = CameraGroup(self.scene.camera)
+            
+        self.z_list[z_index].add(entity)
         self.space.add(*entity.to_add_space)
         self.all_sprites.add(entity)
 
@@ -85,89 +114,166 @@ class Systems:
         if perm:
             self.reclaimable_id.append(entity.entity_id)
             del entity
+    
+    def render(self, screen):
+
         
-        
+
+        sorted_z_list = sorted(self.z_list.keys())
+        for k in sorted_z_list:
+            v = self.z_list[k]
+            v.draw(screen)
 
     def update(self, delta):
         self.space.step(delta)
         self.all_sprites.update(delta)
+        self.nav_mesh.update(delta)
         for a in self.ai:
             a.update(delta)
-        
 
 
-class NavMesh:
-    def __init__(self, space) -> None:
-        self.space = space
-        self.x = 0
-        self.y = 0
-        self.square_size = 40
-        self.size_x = 43
-        self.size_y = 31
-        self.points = []   
-        self.squares = {
-            (x, y) : NavSquare(x, y, self.square_size) for x in range(self.size_x) for y in range(self.size_y)
-        }
-        self.occupied = {}
-        #self.squares = [NavSquare(x, y, self.square_size) for x in range(self.size_x) for y in range(self.size_y)]
-        #start = time.perf_counter()
-        #self.a_star((0, 0), (42, 124))
-        #print(time.perf_counter() - start)
-        
-    def dynamic_nav(self, object:DynamicBody):
-        rx = object.body.position.x
-        ry = object.body.position.y
-        rh = object.rect.height
-        rw = object.rect.width
-
-        os1 = (int(rx / self.square_size), int(ry / self.square_size))
-        os2 = (int((rx + rw) / self.square_size), int((ry + rh) / self.square_size))
-        
-
-    def point_to_square(self, point):
-        pass
-
+class CameraGroup(pg.sprite.Group):
+    def __init__(self, camera) -> None:
+        super().__init__()
+        self.camera = camera
     
+    def draw(self, surface):
+        for sprite in self.sprites():
+            surface.blit(sprite.image, (
+                sprite.rect.x - self.camera.x,
+                sprite.rect.y  - self.camera.y)
+                )
+
+
+
+
+
+
+
+
+
+
+import time
+import math
+class NavMesh:
+    IGNORED_OBJECTS =[Collision.SENSOR, Collision.SHIP, Collision.PROJECTILE, Collision.LOOT]
+    def __init__(self, space, all_sprites) -> None:
+        self.all_sprites = all_sprites
+        self.space = space
+
+        self.square_size = 24
+
+        self.nav_mesh_update_timer = Timer(0.5)
+        self.nav_mesh_update_timer.repeat = True
+        self.nav_mesh_update_timer.call_back = self.update_nav
+        self.nav_mesh_update_timer.start()
+
+        self.total_occupied = set()
+        self.total_care = set()
+        self.update_nav()
+
+
+
+    def update(self, delta):
+        self.nav_mesh_update_timer.update(delta)
+
+    def update_nav(self):
+        self.total_occupied = set()
+        self.total_care = set()
+        for object in self.all_sprites:
+            if not object.shape.collision_type in NavMesh.IGNORED_OBJECTS:
+                rh = object.true_width
+                rw = object.true_height
+                rx = object.body.position.x 
+                ry = object.body.position.y
+
+                os1 = (int((rx - (rw / 2)) / self.square_size), int((ry - (rh / 2)) / self.square_size))
+                os2 = (int((rx + rw) / self.square_size), int((ry + rh) / self.square_size))
+                
+                as1 = (os1[0] - 2, os1[1] - 2)
+                as2 = (os2[0] + 2, os2[1] + 2)
+
+                self.total_occupied = set.union(self.total_occupied, set((x, y) for x in range(os1[0], os2[0]) for y in range(os1[1], os2[1])))
+                self.total_care = set.union(self.total_care, set((x, y) for x in range(as1[0], as2[0]) for y in range(as1[1], as2[1])))
+
+    def heur(self, a, b):
+        x_distance = abs(a[0] - b[0])
+        y_distance = abs(a[1] - b[1])
+        return math.sqrt( x_distance * x_distance + y_distance*y_distance)
+
     def a_star(self, start, end):
-        
-        start = self.squares[(int(start[0] / self.square_size), int(start[1] / self.square_size))]
-        end = self.squares[(int(end[0] / self.square_size), int(end[1] / self.square_size))]
+        timer_start = time.perf_counter()
+        start = (int(start[0] / self.square_size), int(start[1] / self.square_size))
+        end = (int(end[0] / self.square_size), int(end[1] / self.square_size))
         
         open = set()
         close = set()
-        data = {k:{"in_sorted":False, "f":0, "h":0, "g": 0, "node":k, "parent":None}  for k in self.squares.values() }
+        data = {start:{"f":0, "h":0, "g": 0, "node":start, "parent":None}}
         open.add(start)
         while len(open) > 0:
+
             current_node = sorted(open, key=lambda item: data[item]["f"])[0]
             if current_node == end:
                 paz = []
                 current = current_node
+                
+                old_x = current[0]
+                old_y = current[1]
+                old_dir = None
                 while current:
-                    x, y = current.get_pos()
+                    x = current[0]
+                    y = current[1]
+                    direction = (x - old_x, y - old_y)
+                    if old_dir == direction:
+                        old_x = x
+                        old_y = y
+                        old_dir = direction
+                        current = data[current]["parent"]
+                        continue
+                    old_dir = direction
+
                     paz.append((
-                        (x * self.square_size) + (self.square_size / 2),
-                        (y * self.square_size) + (self.square_size / 2)
+                        (x * self.square_size) - (self.square_size / 2),
+                        (y * self.square_size) - (self.square_size / 2)
                         ))
                     current = data[current]["parent"]                
+                    old_x = x
+                    old_y = y
                 paz = paz[::-1]
+                print(time.perf_counter() - timer_start)
                 return paz
 
-            for x_offset, y_offset in [(0, -1), (0, 1), (-1, 0), (1, 0), (-1, -1), (-1, 1), (1, -1), (1, 1)]:
+            for x_offset, y_offset in [(0, -1), (0, 1), (-1, 0), (1, 0), (-1, -1), (-1, 1), (1, -1), (1, 1)]: # , (-1, -1), (-1, 1), (1, -1), (1, 1)
                 try:
-                    neighbor = self.squares[(x_offset + current_node.x, y_offset + current_node.y)]
+                    neighbor = (x_offset + current_node[0], y_offset + current_node[1])
                 except KeyError:
                     continue
-
-                if neighbor.occupied_by > 0:
-                    continue
+                
+                if not neighbor in data.keys():
+                    data[neighbor] = {"f":0, "h":0, "g": 0, "node":neighbor, "parent":None}
 
                 if not neighbor in open and not neighbor in close:
                     open.add(neighbor)
                     data[neighbor]["parent"] = current_node
-                    data[neighbor]["g"] = data[current_node]["g"] + 1
+                    if neighbor in self.total_care:
+                        data[neighbor]["g"] = data[current_node]["g"] + 3
+                    elif neighbor in self.total_occupied:
+                        data[neighbor]["g"] = data[current_node]["g"] + 999999
+                    else:
+                        data[neighbor]["g"] = data[current_node]["g"] + 0
+                    data[neighbor]["h"] = self.heur(neighbor, end)
+                    data[neighbor]["f"] = data[neighbor]["g"] + data[neighbor]["h"]
+
                 else:
                     if data[neighbor]["g"] > data[current_node]["g"] + 1:
-                        data[neighbor]["g"] = data[current_node]["g"] + 1
+                        if neighbor in self.total_care:
+                            data[neighbor]["g"] = data[current_node]["g"] + 3
+                        elif neighbor in self.total_occupied:
+                            data[neighbor]["g"] = data[current_node]["g"] + 999999
+                        else:
+                            data[neighbor]["g"] = data[current_node]["g"] + 0
+                        data[neighbor]["h"] = self.heur(neighbor, end)
+                        data[neighbor]["f"] = data[neighbor]["g"] + data[neighbor]["h"]
                         data[neighbor]["parent"] = current_node
                         if neighbor in close:
                             close.remove(neighbor)
@@ -178,25 +284,3 @@ class NavMesh:
                 
 
         
-                
-class NavSquare:
-    def __init__(self, x, y, size) -> None:
-        self.f = 0
-        self.x = x
-        self.y = y
-        self.body = pm.Body(body_type=pm.Body.STATIC)
-        self.occupied_by = 0
-        self.shape = pm.Poly(
-            self.body,
-             [(0,0),(size,0),(size,size),(0,size)])
-
-        self.shape.parent = self
-        self.shape.sensor = True
-        self.shape.collision_type = Collision.NAV_MESH
-        self.body.position = (self.x * size, self.y * size)
-
-    def get_pos(self):
-        return (self.x, self.y)
-        
-
-    

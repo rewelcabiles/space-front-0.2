@@ -2,7 +2,8 @@
 
 class Collision:
     col_list = [
-        "debris", "player", "projectile", "ship", "loot", "sensor", "interactable", "nav_mesh"
+        "debris", "player", "projectile", "ship", "loot", "sensor", "interactable", 
+        "background_entity", "SPACE_STRUCTURE"
     ]
     for k, v in dict(zip(col_list, range(len(col_list)))).items():
         vars()[k.upper()] = v
@@ -14,27 +15,29 @@ class Collision:
         
         self.space.add_collision_handler(Collision.SHIP, Collision.DEBRIS).begin = self.ship_collides
         self.space.add_collision_handler(Collision.SENSOR, Collision.LOOT).begin = self.pick_up_item
+        self.space.add_collision_handler(Collision.SENSOR, Collision.SPACE_STRUCTURE).begin = self.interactable
+        self.space.add_collision_handler(Collision.SENSOR, Collision.SPACE_STRUCTURE).separate = self.interactable_end
 
         self.space.add_wildcard_collision_handler(Collision.PROJECTILE).begin = self.projectile_hit
+        self.space.add_wildcard_collision_handler(Collision.SPACE_STRUCTURE).begin = self.ignore_collision
 
-        self.space.add_wildcard_collision_handler(Collision.NAV_MESH).begin = self.nav_mesh_collide
-        self.space.add_wildcard_collision_handler(Collision.NAV_MESH).separate = self.nav_mesh_separate
 
-    def nav_mesh_separate(self, arbiter, space, data):
-        allowed_collision = [Collision.DEBRIS]
-        if arbiter.shapes[1].collision_type in allowed_collision:
-            arbiter.shapes[0].parent.occupied_by -= 1
-
+    def ignore_collision(self, arbiter, space, data):
+        if arbiter.shapes[1].collision_type in [Collision.SENSOR]:
+            return True    
         return False
 
-    def nav_mesh_collide(self, arbiter, space, data):
-        allowed_collision = [Collision.DEBRIS]
-        if arbiter.shapes[1].collision_type in allowed_collision:
-            arbiter.shapes[0].parent.occupied_by += 1
+    def interactable_end(self, arbiter, space, data):
+        ship = arbiter.shapes[0].parent
+        ship.can_interact = False
+        ship.interactable = None
+        return True
 
-        return False
-
-        
+    def interactable(self, arbiter, space, data):
+        ship = arbiter.shapes[0].parent
+        ship.interactable = arbiter.shapes[1].parent
+        ship.can_interact = True
+        return True
 
     def pick_up_item(self, arbiter, space, data):
         ship = arbiter.shapes[0].parent
@@ -48,6 +51,10 @@ class Collision:
     def ship_collides(self, arbiter, space, data):
         ship = arbiter.shapes[0].parent
         debris = arbiter.shapes[1].parent
+        
+        if arbiter.shapes[1].collision_type == Collision.BACKGROUND_ENTITY:
+            return False
+
         mass_difference = (debris.body.mass - ship.body.mass) / 100
         message = {
             "subject" : "take_damage",
@@ -61,11 +68,10 @@ class Collision:
     def projectile_hit(self, arbiter, space, data):
         projectile = arbiter.shapes[0].parent
         other = arbiter.shapes[1].parent
-
         if projectile.parent == other:
             return False
 
-        if arbiter.shapes[1].collision_type in [Collision.SENSOR, Collision.NAV_MESH]:
+        if arbiter.shapes[1].collision_type in [Collision.SPACE_STRUCTURE, Collision.SENSOR, Collision.PROJECTILE, Collision.BACKGROUND_ENTITY]:
             return False
 
         if arbiter.is_first_contact:
