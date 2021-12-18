@@ -11,4 +11,4 @@ FPS = 60
 SCREEN = None
 
 DEBUG = False
-NAV_DEBUG = False
+NAV_DEBUG = True
