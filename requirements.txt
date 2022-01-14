@@ -1,0 +1,6 @@
+cffi==1.15.0
+pycparser==2.21
+pygame==2.1.2
+pygame-gui==0.6.0
+pymunk==6.2.1
+python-i18n==0.3.9
