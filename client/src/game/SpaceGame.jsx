@@ -80,7 +80,7 @@ class SpacePortScene extends Phaser.Scene {
     this.spawnRocks(20);
 
     this.loot = this.physics.add.group({ allowGravity: false, immovable: true });
-    this.station = this.physics.add.image(420, 420, "station");
+    this.station = this.physics.add.image(1000, 980, "station");
     this.station.setImmovable(true);
     this.station.body.moves = false;
 
@@ -125,13 +125,22 @@ class SpacePortScene extends Phaser.Scene {
   }
 
   spawnRocks(count) {
+    const starterRock = this.rocks.create(
+      PLAYER_SPAWN.x + 180,
+      PLAYER_SPAWN.y - 40,
+      "rock",
+    );
+    starterRock.setCircle(28);
+    starterRock.setData("hp", 20);
+    starterRock.setData("maxHp", 20);
+
     for (let i = 0; i < count; i += 1) {
       const x = Phaser.Math.Between(140, WORLD_SIZE - 140);
       const y = Phaser.Math.Between(140, WORLD_SIZE - 140);
       const rock = this.rocks.create(x, y, "rock");
       rock.setCircle(28);
-      rock.setData("hp", 36);
-      rock.setData("maxHp", 36);
+      rock.setData("hp", 24);
+      rock.setData("maxHp", 24);
     }
   }
 
@@ -229,7 +238,7 @@ class SpacePortScene extends Phaser.Scene {
   hitRock(bullet, rock) {
     bullet.disableBody(true, true);
 
-    const hp = (rock.getData("hp") ?? 36) - this.weaponStats.projectileDamage;
+    const hp = (rock.getData("hp") ?? 24) - this.weaponStats.projectileDamage;
     rock.setData("hp", hp);
 
     if (hp > 0) {
