@@ -5,6 +5,15 @@ import { LOOT_ITEMS, MODULES, SHIPS } from "./gameData";
 
 const WORLD_SIZE = 2400;
 const PLAYER_SPAWN = { x: WORLD_SIZE / 2, y: WORLD_SIZE / 2 };
+const DEBUG_LOG_URL = `${import.meta.env.VITE_SERVER_URL ?? "http://localhost:3001"}/api/debug-log`;
+
+const writeDebugLog = (payload) => {
+  fetch(DEBUG_LOG_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ...payload, timestamp: Date.now() }),
+  }).catch(() => {});
+};
 
 const createTriangleTexture = (scene, key, color) => {
   if (scene.textures.exists(key)) {
@@ -120,6 +129,15 @@ class SpacePortScene extends Phaser.Scene {
       .setDepth(50);
 
     this.minimap = this.add.graphics().setDepth(50).setScrollFactor(0);
+
+    // #region agent log
+    writeDebugLog({
+      hypothesisId: "H2",
+      location: "SpaceGame.jsx:create",
+      message: "Scene created and rocks spawned",
+      data: { rockCount: this.rocks.getChildren().length },
+    });
+    // #endregion
   }
 
   drawBackgroundStars() {
@@ -244,10 +262,28 @@ class SpacePortScene extends Phaser.Scene {
       Math.sin(aimAngle) * this.weaponStats.projectileSpeed,
     );
 
+    // #region agent log
+    writeDebugLog({
+      hypothesisId: "H1",
+      location: "SpaceGame.jsx:fireProjectile",
+      message: "Projectile fired",
+      data: { bulletActive: bullet.active, fireRate: fireRate },
+    });
+    // #endregion
+
     this.applyAutoHit(aimAngle);
   }
 
   hitRock(bullet, rock) {
+    // #region agent log
+    writeDebugLog({
+      hypothesisId: "H1",
+      location: "SpaceGame.jsx:hitRock",
+      message: "Bullet-rock overlap callback fired",
+      data: { rockActive: Boolean(rock?.active), bulletActive: Boolean(bullet?.active) },
+    });
+    // #endregion
+
     bullet.disableBody(true, true);
     this.damageRock(rock);
   }
@@ -257,7 +293,22 @@ class SpacePortScene extends Phaser.Scene {
       return;
     }
 
-    const hp = (rock.getData("hp") ?? 24) - this.weaponStats.projectileDamage;
+    const previousHp = rock.getData("hp") ?? 24;
+    const hp = previousHp - this.weaponStats.projectileDamage;
+
+    // #region agent log
+    writeDebugLog({
+      hypothesisId: "H3",
+      location: "SpaceGame.jsx:damageRock",
+      message: "Applying rock damage",
+      data: {
+        previousHp: previousHp,
+        projectileDamage: this.weaponStats.projectileDamage,
+        nextHp: hp,
+      },
+    });
+    // #endregion
+
     rock.setData("hp", hp);
 
     if (hp > 0) {
@@ -268,6 +319,16 @@ class SpacePortScene extends Phaser.Scene {
     lootDrop.setData("item", Phaser.Utils.Array.GetRandom(LOOT_ITEMS));
     lootDrop.setDepth(8);
     lootDrop.setCircle(8);
+
+    // #region agent log
+    writeDebugLog({
+      hypothesisId: "H4",
+      location: "SpaceGame.jsx:damageRock",
+      message: "Rock destroyed and loot dropped",
+      data: { lootActive: Boolean(lootDrop?.active), x: rock.x, y: rock.y },
+    });
+    // #endregion
+
     rock.destroy();
   }
 
@@ -464,6 +525,15 @@ export function SpaceGame({
       return;
     }
 
+    // #region agent log
+    writeDebugLog({
+      hypothesisId: "H2",
+      location: "SpaceGame.jsx:useEffect",
+      message: "SpaceGame effect init",
+      data: { ownSocketId: ownSocketId, roomCode: roomCode },
+    });
+    // #endregion
+
     const hooks = {
       getRemotePlayers: () => playersRef.current,
       getRoomStats: () => ({
@@ -505,6 +575,15 @@ export function SpaceGame({
     gameRef.current = game;
 
     return () => {
+      // #region agent log
+      writeDebugLog({
+        hypothesisId: "H2",
+        location: "SpaceGame.jsx:useEffect",
+        message: "SpaceGame effect cleanup",
+        data: { ownSocketId: ownSocketId, roomCode: roomCode },
+      });
+      // #endregion
+
       game.destroy(true);
       gameRef.current = null;
     };
