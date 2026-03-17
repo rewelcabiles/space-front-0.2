@@ -38,6 +38,16 @@ describe("multiplayer app", () => {
     expect(response.body).toEqual({ status: "ok" });
   });
 
+  it("serves original game content payload", async () => {
+    const { app } = buildApplication();
+    const response = await request(app).get("/api/game-content");
+    expect(response.statusCode).toBe(200);
+    expect(response.body.ships["Nem-1"]).toBeTruthy();
+    expect(response.body.modules["Projectile Cannon Mk1"]).toBeTruthy();
+    expect(response.body.items.Rocks).toBeTruthy();
+    expect(response.body.stationDialogue["1950d26c-5cb6-414c-84d3-6fda48f842d4"]).toBeTruthy();
+  });
+
   it("syncs room state and restores saved progression on rejoin", async () => {
     tempDirectory = await mkdtemp(join(tmpdir(), "multiplayer-server-"));
     const storagePath = join(tempDirectory, "progression.json");
