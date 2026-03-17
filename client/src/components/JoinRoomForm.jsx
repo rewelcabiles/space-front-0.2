@@ -8,7 +8,7 @@ export function JoinRoomForm({
   return (
     <form className="join-form" onSubmit={onSubmit}>
       <label>
-        Player name
+        Callsign
         <input
           value={playerName}
           onChange={(event) => onChangePlayerName(event.target.value)}
@@ -17,7 +17,7 @@ export function JoinRoomForm({
       </label>
 
       <label>
-        Room code
+        Sector code
         <input
           value={roomCode}
           onChange={(event) => onChangeRoomCode(event.target.value)}
@@ -25,7 +25,7 @@ export function JoinRoomForm({
         />
       </label>
 
-      <button type="submit">Join room</button>
+      <button type="submit">Enter sector</button>
     </form>
   );
 }

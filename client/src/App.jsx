@@ -28,15 +28,10 @@ function App() {
     setDialogNodeId(null);
   };
 
-  return (
-    <main className="layout">
-      <section className="card">
-        <h1>Multiplayer Browser Game</h1>
-        <p className="subtitle">
-          Original Python space game ported to browser with modular Node + React architecture.
-        </p>
-
-        {!room.joined && (
+  if (!room.joined) {
+    return (
+      <main className="lobby-layout">
+        <section className="lobby-panel">
           <JoinRoomForm
             playerName={room.playerName}
             roomCode={room.roomCode}
@@ -44,58 +39,57 @@ function App() {
             onChangeRoomCode={room.setRoomCode}
             onSubmit={handleJoin}
           />
-        )}
+          {room.errorMessage && <p className="error">{room.errorMessage}</p>}
+        </section>
+      </main>
+    );
+  }
 
-        {room.joined && (
-          <div className="in-room">
-            <div className="room-header">
-              <h2>Room {room.roomState.roomCode || room.roomCode}</h2>
-              <button type="button" className="ghost" onClick={handleLeave}>
-                Leave
-              </button>
-            </div>
+  return (
+    <main className="immersive-layout">
+      <SpaceGameCanvas
+        ownSocketId={room.ownSocketId}
+        roomCode={room.roomState.roomCode || room.roomCode}
+        players={room.roomState.players}
+        content={content}
+        onStateUpdate={room.sendStateUpdate}
+        onProgressGain={room.emitProgressGain}
+        onCargoChange={setCargo}
+        onHealthChange={room.setHealth}
+        onToggleCargo={() => setShowCargo((value) => !value)}
+        onStationInteract={() => {
+          setDialogNodeId((nodeId) => (nodeId ? null : content.stationRootId));
+        }}
+      />
 
-            <div className="progress-panel">
-              <p><strong>{room.playerName}</strong></p>
-              <p>Hull: {room.health}/100</p>
-              <p>Level {room.myProgress.level} ({room.myProgress.experience}/100 XP)</p>
-              <button type="button" onClick={() => setShowCargo((value) => !value)}>
-                {showCargo ? "Hide cargo" : "Show cargo"}
-              </button>
-              <button
-                type="button"
-                className="ghost"
-                onClick={() => setDialogNodeId(content.stationRootId)}
-              >
-                Open station
-              </button>
-            </div>
-
-            <SpaceGameCanvas
-              ownSocketId={room.ownSocketId}
-              roomCode={room.roomState.roomCode || room.roomCode}
-              players={room.roomState.players}
-              content={content}
-              onStateUpdate={room.sendStateUpdate}
-              onProgressGain={room.emitProgressGain}
-              onCargoChange={setCargo}
-              onHealthChange={room.setHealth}
-              onToggleCargo={() => setShowCargo((value) => !value)}
-              onStationInteract={() => {
-                setDialogNodeId((nodeId) => (nodeId ? null : content.stationRootId));
-              }}
-            />
-
-            <div className="panels">
-              <PlayersPanel players={room.roomState.players} />
-
-              {showCargo && <CargoPanel cargo={cargo} />}
-            </div>
-          </div>
-        )}
-
-        {room.errorMessage && <p className="error">{room.errorMessage}</p>}
+      <section className="floating-topbar">
+        <div className="pill">{room.roomState.roomCode || room.roomCode}</div>
+        <div className="pill">{room.playerName}</div>
+        <div className="pill">Hull {room.health}/100</div>
+        <div className="pill">
+          Lv {room.myProgress.level} - {room.myProgress.experience}/100 XP
+        </div>
+        <button type="button" onClick={() => setShowCargo((value) => !value)}>
+          {showCargo ? "Hide cargo" : "Show cargo"}
+        </button>
+        <button
+          type="button"
+          className="ghost"
+          onClick={() => setDialogNodeId(content.stationRootId)}
+        >
+          Open station
+        </button>
+        <button type="button" className="ghost" onClick={handleLeave}>
+          Leave
+        </button>
       </section>
+
+      <section className="floating-right-panel">
+        <PlayersPanel players={room.roomState.players} />
+        {showCargo && <CargoPanel cargo={cargo} />}
+      </section>
+
+      {room.errorMessage && <p className="floating-error">{room.errorMessage}</p>}
 
       {dialogNodeId && (
         <StationDialog
