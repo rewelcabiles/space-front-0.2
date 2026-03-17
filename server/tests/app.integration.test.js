@@ -55,24 +55,27 @@ describe("multiplayer app", () => {
       clients.push(alice);
       await waitForSocketEvent(alice, "connect");
 
+      const initialRoomStatePromise = waitForSocketEvent(alice, "room_state");
       alice.emit("join_room", { playerName: "Alice", roomCode });
       await waitForSocketEvent(alice, "joined_room");
-      const initialRoomState = await waitForSocketEvent(alice, "room_state");
+      const initialRoomState = await initialRoomStatePromise;
       expect(initialRoomState.players).toHaveLength(1);
 
       const bob = createClient(serverUrl, { transports: ["websocket"] });
       clients.push(bob);
       await waitForSocketEvent(bob, "connect");
 
+      const twoPlayerRoomStatePromise = waitForSocketEvent(bob, "room_state");
       bob.emit("join_room", { playerName: "Bob", roomCode });
       await waitForSocketEvent(bob, "joined_room");
-      const twoPlayerRoomState = await waitForSocketEvent(bob, "room_state");
+      const twoPlayerRoomState = await twoPlayerRoomStatePromise;
       expect(twoPlayerRoomState.players).toHaveLength(2);
 
+      const syncedStatePromise = waitForSocketEvent(bob, "room_state");
       alice.emit("progress_update", {
         progress: { level: 3, experience: 85 },
       });
-      const syncedState = await waitForSocketEvent(bob, "room_state");
+      const syncedState = await syncedStatePromise;
       const syncedAlice = syncedState.players.find((player) => player.name === "Alice");
       expect(syncedAlice.progress).toEqual({ level: 3, experience: 85 });
 
@@ -86,9 +89,11 @@ describe("multiplayer app", () => {
       clients.push(returningAlice);
       await waitForSocketEvent(returningAlice, "connect");
 
+      const rejoinRoomStatePromise = waitForSocketEvent(returningAlice, "room_state");
       returningAlice.emit("join_room", { playerName: "Alice", roomCode });
       const rejoinPayload = await waitForSocketEvent(returningAlice, "joined_room");
       expect(rejoinPayload.progress).toEqual({ level: 3, experience: 85 });
+      await rejoinRoomStatePromise;
     } finally {
       clients.forEach((client) => {
         if (client.connected) {
