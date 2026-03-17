@@ -104,7 +104,7 @@ class SpacePortScene extends Phaser.Scene {
       this,
     );
 
-    this.keys = this.input.keyboard.addKeys("W,A,S,D,SPACE,TAB,E");
+    this.keys = this.input.keyboard.addKeys("W,A,S,D,SPACE,TAB,E,F");
     this.input.keyboard.on("keydown-E", () => {
       if (this.isNearStation) {
         this.hooks.onStationInteract();
@@ -113,6 +113,9 @@ class SpacePortScene extends Phaser.Scene {
     this.input.keyboard.on("keydown-TAB", (event) => {
       event.preventDefault();
       this.hooks.onToggleCargo();
+    });
+    this.input.on("pointerdown", () => {
+      this.fireProjectile(this.time.now);
     });
 
     this.camera = this.cameras.main;
@@ -408,7 +411,7 @@ class SpacePortScene extends Phaser.Scene {
         `Hull: ${this.playerHealth}/100`,
         `Room: ${roomStats.roomCode || "-"}`,
         `Players: ${roomStats.playerCount}`,
-        "Controls: WASD move, Mouse aim/fire, SPACE brake, TAB cargo, E station",
+        "Controls: WASD move, Mouse/F fire, SPACE brake, TAB cargo, E station",
       ].join("\n"),
     );
 
@@ -476,7 +479,7 @@ class SpacePortScene extends Phaser.Scene {
     );
     this.player.rotation = facingAngle + Math.PI / 2;
 
-    if (pointer.isDown) {
+    if (pointer.isDown || this.keys.F.isDown) {
       this.fireProjectile(time);
     }
 
