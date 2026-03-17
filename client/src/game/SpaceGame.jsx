@@ -516,9 +516,45 @@ export function SpaceGame({
   const gameRef = useRef(null);
 
   const playersRef = useRef(players);
+  const roomCodeRef = useRef(roomCode);
+  const onStateUpdateRef = useRef(onStateUpdate);
+  const onProgressGainRef = useRef(onProgressGain);
+  const onCargoChangeRef = useRef(onCargoChange);
+  const onHealthChangeRef = useRef(onHealthChange);
+  const onToggleCargoRef = useRef(onToggleCargo);
+  const onStationInteractRef = useRef(onStationInteract);
+
   useEffect(() => {
     playersRef.current = players;
   }, [players]);
+
+  useEffect(() => {
+    roomCodeRef.current = roomCode;
+  }, [roomCode]);
+
+  useEffect(() => {
+    onStateUpdateRef.current = onStateUpdate;
+  }, [onStateUpdate]);
+
+  useEffect(() => {
+    onProgressGainRef.current = onProgressGain;
+  }, [onProgressGain]);
+
+  useEffect(() => {
+    onCargoChangeRef.current = onCargoChange;
+  }, [onCargoChange]);
+
+  useEffect(() => {
+    onHealthChangeRef.current = onHealthChange;
+  }, [onHealthChange]);
+
+  useEffect(() => {
+    onToggleCargoRef.current = onToggleCargo;
+  }, [onToggleCargo]);
+
+  useEffect(() => {
+    onStationInteractRef.current = onStationInteract;
+  }, [onStationInteract]);
 
   useEffect(() => {
     if (!containerRef.current || !ownSocketId) {
@@ -530,22 +566,22 @@ export function SpaceGame({
       hypothesisId: "H2",
       location: "SpaceGame.jsx:useEffect",
       message: "SpaceGame effect init",
-      data: { ownSocketId: ownSocketId, roomCode: roomCode },
+      data: { ownSocketId: ownSocketId, roomCode: roomCodeRef.current },
     });
     // #endregion
 
     const hooks = {
       getRemotePlayers: () => playersRef.current,
       getRoomStats: () => ({
-        roomCode,
+        roomCode: roomCodeRef.current,
         playerCount: playersRef.current.length,
       }),
-      onStateUpdate,
-      onProgressGain,
-      onCargoChange,
-      onHealthChange,
-      onToggleCargo,
-      onStationInteract,
+      onStateUpdate: (...args) => onStateUpdateRef.current?.(...args),
+      onProgressGain: (...args) => onProgressGainRef.current?.(...args),
+      onCargoChange: (...args) => onCargoChangeRef.current?.(...args),
+      onHealthChange: (...args) => onHealthChangeRef.current?.(...args),
+      onToggleCargo: (...args) => onToggleCargoRef.current?.(...args),
+      onStationInteract: (...args) => onStationInteractRef.current?.(...args),
     };
 
     const scene = new SpacePortScene({ hooks, ownSocketId });
@@ -580,7 +616,7 @@ export function SpaceGame({
         hypothesisId: "H2",
         location: "SpaceGame.jsx:useEffect",
         message: "SpaceGame effect cleanup",
-        data: { ownSocketId: ownSocketId, roomCode: roomCode },
+        data: { ownSocketId: ownSocketId, roomCode: roomCodeRef.current },
       });
       // #endregion
 
@@ -589,13 +625,6 @@ export function SpaceGame({
     };
   }, [
     ownSocketId,
-    onCargoChange,
-    onHealthChange,
-    onProgressGain,
-    onStateUpdate,
-    onStationInteract,
-    onToggleCargo,
-    roomCode,
   ]);
 
   return <div className="game-canvas" ref={containerRef} />;
