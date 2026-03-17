@@ -47,8 +47,8 @@ class SpacePortScene extends Phaser.Scene {
   create() {
     createTriangleTexture(this, "ship-local", SHIPS["Nem-1"].color);
     createTriangleTexture(this, "ship-remote", 0xf59e0b);
-    createCircleTexture(this, "projectile", 4, 0xf8fafc);
-    createCircleTexture(this, "rock", 28, 0x64748b);
+    createCircleTexture(this, "projectile", 6, 0xf8fafc);
+    createCircleTexture(this, "rock", 36, 0x64748b);
     createCircleTexture(this, "loot", 8, 0x22c55e);
     createCircleTexture(this, "station", 40, 0x38bdf8);
 
@@ -80,7 +80,7 @@ class SpacePortScene extends Phaser.Scene {
     this.spawnRocks(20);
 
     this.loot = this.physics.add.group({ allowGravity: false, immovable: true });
-    this.station = this.physics.add.image(1000, 980, "station");
+    this.station = this.physics.add.image(PLAYER_SPAWN.x - 140, PLAYER_SPAWN.y - 80, "station");
     this.station.setImmovable(true);
     this.station.body.moves = false;
 
@@ -126,19 +126,19 @@ class SpacePortScene extends Phaser.Scene {
 
   spawnRocks(count) {
     const starterRock = this.rocks.create(
-      PLAYER_SPAWN.x + 180,
-      PLAYER_SPAWN.y - 40,
+      PLAYER_SPAWN.x + 110,
+      PLAYER_SPAWN.y - 10,
       "rock",
     );
-    starterRock.setCircle(28);
-    starterRock.setData("hp", 20);
-    starterRock.setData("maxHp", 20);
+    starterRock.setCircle(36);
+    starterRock.setData("hp", 10);
+    starterRock.setData("maxHp", 10);
 
     for (let i = 0; i < count; i += 1) {
       const x = Phaser.Math.Between(140, WORLD_SIZE - 140);
       const y = Phaser.Math.Between(140, WORLD_SIZE - 140);
       const rock = this.rocks.create(x, y, "rock");
-      rock.setCircle(28);
+      rock.setCircle(36);
       rock.setData("hp", 24);
       rock.setData("maxHp", 24);
     }
@@ -294,7 +294,7 @@ class SpacePortScene extends Phaser.Scene {
       this.player.y,
       this.station.x,
       this.station.y,
-    ) < 140;
+    ) < 240;
 
     this.promptText.setText(nearStation ? "Press E to open station dialog" : "");
   }
@@ -372,7 +372,7 @@ class SpacePortScene extends Phaser.Scene {
       this.player.y,
       this.station.x,
       this.station.y,
-    ) < 140;
+    ) < 240;
     if (nearStation && Phaser.Input.Keyboard.JustDown(this.keys.E)) {
       this.hooks.onStationInteract();
     }

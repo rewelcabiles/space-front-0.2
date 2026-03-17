@@ -10,7 +10,7 @@ export const SHIPS = {
 export const MODULES = {
   "Projectile Cannon Mk1": {
     fireRateMs: 200,
-    projectileDamage: 12,
+    projectileDamage: 16,
     projectileSpeed: 650,
   },
 };
