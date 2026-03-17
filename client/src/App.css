@@ -1,0 +1,174 @@
+.layout {
+  min-height: 100vh;
+  display: grid;
+  place-items: start center;
+  padding: 1rem;
+}
+
+.card {
+  width: min(1220px, 100%);
+  border-radius: 12px;
+  background: #1e293b;
+  border: 1px solid #334155;
+  padding: 1.5rem;
+}
+
+h1,
+h2,
+h3 {
+  margin: 0;
+}
+
+.subtitle {
+  margin-top: 0.4rem;
+  color: #cbd5e1;
+}
+
+.join-form {
+  display: grid;
+  gap: 0.85rem;
+  margin-top: 1.2rem;
+}
+
+label {
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.95rem;
+}
+
+input,
+button {
+  border-radius: 8px;
+  border: 1px solid #475569;
+  background: #0f172a;
+  color: #e2e8f0;
+  padding: 0.65rem 0.75rem;
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+  background: #2563eb;
+  border-color: #2563eb;
+}
+
+button:hover {
+  filter: brightness(1.07);
+}
+
+.in-room {
+  margin-top: 1.1rem;
+  display: grid;
+  gap: 1rem;
+}
+
+.room-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.ghost {
+  background: transparent;
+  border-color: #64748b;
+}
+
+.progress-panel {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.8rem;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  padding: 0.8rem;
+}
+
+.game-canvas {
+  width: 100%;
+  min-height: 620px;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid #334155;
+}
+
+.panels {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.panel {
+  border: 1px solid #334155;
+  border-radius: 8px;
+  padding: 0.8rem;
+  background: #0f172a;
+}
+
+.players {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.players li {
+  display: flex;
+  justify-content: space-between;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  padding: 0.7rem 0.8rem;
+}
+
+.cargo-list {
+  list-style: none;
+  margin: 0.7rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.cargo-list li {
+  display: flex;
+  justify-content: space-between;
+}
+
+.dialog-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgb(2 6 23 / 70%);
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+}
+
+.dialog-card {
+  width: min(520px, 100%);
+  border-radius: 12px;
+  border: 1px solid #334155;
+  background: #0f172a;
+  padding: 1rem;
+  display: grid;
+  gap: 0.8rem;
+}
+
+.dialog-actor {
+  margin: 0;
+  color: #7dd3fc;
+}
+
+.dialog-options {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.error {
+  margin-top: 1rem;
+  color: #fca5a5;
+}
+
+@media (max-width: 980px) {
+  .progress-panel,
+  .panels {
+    grid-template-columns: 1fr;
+  }
+}
