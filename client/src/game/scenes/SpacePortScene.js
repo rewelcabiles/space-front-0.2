@@ -1,4 +1,7 @@
 import Phaser from "phaser";
+import { createAiPilot } from "../systems/aiPilot";
+import { buildNavMesh } from "../systems/navmesh";
+import { computeModuleLoadout } from "../systems/moduleStats";
 
 const WORLD_SIZE = 2400;
 const PLAYER_SPAWN = { x: WORLD_SIZE / 2, y: WORLD_SIZE / 2 };
@@ -16,7 +19,11 @@ export class SpacePortScene extends Phaser.Scene {
     this.remoteShips = new Map();
     this.lastShipStateEmit = 0;
     this.lastCollisionDamage = 0;
+    this.lastHudEmit = 0;
     this.isNearStation = false;
+    this.forceAiRepath = false;
+    this.nextNavRebuildAt = 0;
+    this.navMesh = null;
   }
 
   preload() {
@@ -34,6 +41,12 @@ export class SpacePortScene extends Phaser.Scene {
   }
 
   create() {
+    this.loadout = computeModuleLoadout({
+      moduleCatalog: this.content.moduleCatalog,
+      primaryModuleName: this.content.primaryModuleName,
+      maxModuleSpace: 12,
+    });
+
     this.cameras.main.setBackgroundColor("#020617");
     this.physics.world.setBounds(0, 0, WORLD_SIZE, WORLD_SIZE);
     this.drawBackgroundStars();
@@ -41,10 +54,18 @@ export class SpacePortScene extends Phaser.Scene {
     this.player = this.physics.add.image(PLAYER_SPAWN.x, PLAYER_SPAWN.y, "ship-local");
     this.player.setCollideWorldBounds(true);
     this.player.setDrag(360, 360);
-    this.player.setMaxVelocity(this.content.ship.max_speed * 2);
+    this.player.setMaxVelocity(
+      (this.content.ship.max_speed + Number(this.loadout.modifierTotals.max_speed ?? 0)) * 2,
+    );
     this.player.setScale(0.9);
-    this.playerHealth = 100;
+    this.playerMaxHealth = this.loadout.maxHealth;
+    this.playerHealth = this.playerMaxHealth;
     this.cargo = {};
+    this.weaponStats = this.loadout.weapon ?? this.content.module.type_data ?? {
+      fire_rate: 0.4,
+      proj_damage: 4,
+      proj_speed: 400,
+    };
 
     this.bullets = this.physics.add.group({
       classType: Phaser.Physics.Arcade.Image,
@@ -64,6 +85,14 @@ export class SpacePortScene extends Phaser.Scene {
     this.station.setScale(0.55);
     this.station.setImmovable(true);
     this.station.body.moves = false;
+    this.station.setDepth(7);
+
+    this.aiPilot = createAiPilot(this, {
+      textureKey: "ship-remote",
+      startX: PLAYER_SPAWN.x + 250,
+      startY: PLAYER_SPAWN.y + 140,
+      maxSpeed: this.content.ship.max_speed * 1.8,
+    });
 
     this.physics.add.overlap(this.player, this.loot, this.collectLoot, null, this);
     this.physics.add.overlap(this.bullets, this.rocks, this.hitRock, null, this);
@@ -74,8 +103,10 @@ export class SpacePortScene extends Phaser.Scene {
       null,
       this,
     );
+    this.physics.add.collider(this.aiPilot.sprite, this.rocks);
+    this.physics.add.collider(this.aiPilot.sprite, this.station);
 
-    this.keys = this.input.keyboard.addKeys("W,A,S,D,SPACE,TAB,E,F");
+    this.keys = this.input.keyboard.addKeys("W,A,S,D,SPACE,TAB,E,F,Z");
     this.input.keyboard.on("keydown-E", () => {
       if (this.isNearStation) {
         this.hooks.onStationInteract();
@@ -97,11 +128,14 @@ export class SpacePortScene extends Phaser.Scene {
       .text(16, 16, "", { font: "16px monospace", fill: "#e2e8f0" })
       .setScrollFactor(0)
       .setDepth(50);
+    this.healthBar = this.add.graphics().setDepth(52).setScrollFactor(0);
     this.promptText = this.add
-      .text(16, 90, "", { font: "15px monospace", fill: "#93c5fd" })
+      .text(16, 106, "", { font: "15px monospace", fill: "#93c5fd" })
       .setScrollFactor(0)
       .setDepth(50);
     this.minimap = this.add.graphics().setDepth(50).setScrollFactor(0);
+
+    this.emitShipHud(0);
   }
 
   drawBackgroundStars() {
@@ -153,6 +187,26 @@ export class SpacePortScene extends Phaser.Scene {
     });
   }
 
+  emitShipHud(time) {
+    if (!this.hooks.onShipHudUpdate) {
+      return;
+    }
+    if (time - this.lastHudEmit < 220) {
+      return;
+    }
+    this.lastHudEmit = time;
+
+    this.hooks.onShipHudUpdate({
+      health: this.playerHealth,
+      maxHealth: this.playerMaxHealth,
+      moduleSpaceUsed: this.loadout.moduleSpaceUsed,
+      maxModuleSpace: this.loadout.maxModuleSpace,
+      installedModules: this.loadout.installedModules.map((entry) => entry.name),
+      aiPathing: this.aiPilot.isPathing(),
+      aiPathNodes: this.aiPilot.getPathLength(),
+    });
+  }
+
   syncRemoteShips() {
     const players = this.hooks.getRemotePlayers();
     const activeIds = new Set();
@@ -200,7 +254,7 @@ export class SpacePortScene extends Phaser.Scene {
   fireProjectile(time) {
     const fireRateMs = Math.max(
       80,
-      Math.round((this.content.module.type_data?.fire_rate ?? 0.4) * 1000),
+      Math.round((this.weaponStats.fire_rate ?? 0.4) * 1000),
     );
     if (time - this.lastShotAt < fireRateMs) {
       return;
@@ -226,7 +280,7 @@ export class SpacePortScene extends Phaser.Scene {
     bullet.body.setAllowGravity(false);
     bullet.setData("bornAt", time);
 
-    const speed = this.content.module.type_data?.proj_speed ?? 400;
+    const speed = this.weaponStats.proj_speed ?? 400;
     bullet.setVelocity(Math.cos(aimAngle) * speed, Math.sin(aimAngle) * speed);
 
     this.applyAutoHit(aimAngle);
@@ -275,7 +329,7 @@ export class SpacePortScene extends Phaser.Scene {
     if (!rock?.active) {
       return;
     }
-    const damage = this.content.module.type_data?.proj_damage ?? 4;
+    const damage = this.weaponStats.proj_damage ?? 4;
     const hp = (rock.getData("hp") ?? 12) - damage;
     rock.setData("hp", hp);
     if (hp > 0) {
@@ -287,8 +341,6 @@ export class SpacePortScene extends Phaser.Scene {
     lootDrop.setData("item", Phaser.Utils.Array.GetRandom(this.content.lootItemNames));
     lootDrop.setDepth(8);
     lootDrop.setCircle(10);
-    // Keeps pickup responsive in cloud testing while preserving cargo loop.
-    this.collectLoot(this.player, lootDrop);
     rock.destroy();
   }
 
@@ -311,21 +363,42 @@ export class SpacePortScene extends Phaser.Scene {
     if (this.playerHealth === 0) {
       this.player.setPosition(PLAYER_SPAWN.x, PLAYER_SPAWN.y);
       this.player.setVelocity(0, 0);
-      this.playerHealth = 100;
+      this.playerHealth = this.playerMaxHealth;
       this.hooks.onHealthChange(this.playerHealth);
     }
+  }
+
+  rebuildNavMesh() {
+    const rockObstacles = this.rocks.getChildren()
+      .filter((rock) => rock.active)
+      .map((rock) => ({ x: rock.x, y: rock.y, radius: 36 }));
+    const stationObstacle = { x: this.station.x, y: this.station.y, radius: 110 };
+
+    this.navMesh = buildNavMesh({
+      worldSize: WORLD_SIZE,
+      cellSize: 80,
+      circularObstacles: [...rockObstacles, stationObstacle],
+    });
   }
 
   updateHud() {
     const roomStats = this.hooks.getRoomStats();
     this.hudText.setText(
       [
-        `Hull: ${this.playerHealth}/100`,
+        `Hull: ${this.playerHealth}/${this.playerMaxHealth}`,
         `Room: ${roomStats.roomCode || "-"}`,
         `Players: ${roomStats.playerCount}`,
-        "Controls: WASD move, Mouse/F fire, SPACE brake, TAB cargo, E station",
+        `AI Pilot: ${this.aiPilot.isPathing() ? `Pathing (${this.aiPilot.getPathLength()} nodes)` : "Idle"}`,
+        "Controls: WASD move, Mouse/F fire, SPACE brake, TAB cargo, E station, Z AI path",
       ].join("\n"),
     );
+
+    this.healthBar.clear();
+    this.healthBar.fillStyle(0x0f172a, 0.8);
+    this.healthBar.fillRect(14, 74, 232, 18);
+    const ratio = Phaser.Math.Clamp(this.playerHealth / this.playerMaxHealth, 0, 1);
+    this.healthBar.fillStyle(ratio < 0.3 ? 0xdc2626 : 0x22c55e, 0.9);
+    this.healthBar.fillRect(16, 76, 228 * ratio, 14);
 
     this.isNearStation = Phaser.Math.Distance.Between(
       this.player.x,
@@ -354,16 +427,34 @@ export class SpacePortScene extends Phaser.Scene {
     this.minimap.fillStyle(0x22d3ee, 1);
     this.minimap.fillCircle(mapX + this.player.x * scale, mapY + this.player.y * scale, 3);
 
+    this.minimap.fillStyle(0xa78bfa, 1);
+    this.minimap.fillCircle(
+      mapX + this.aiPilot.sprite.x * scale,
+      mapY + this.aiPilot.sprite.y * scale,
+      3,
+    );
+
+    this.rocks.getChildren().forEach((rock) => {
+      if (!rock.active) {
+        return;
+      }
+      this.minimap.fillStyle(0x64748b, 0.7);
+      this.minimap.fillCircle(mapX + rock.x * scale, mapY + rock.y * scale, 1.4);
+    });
+
     this.remoteShips.forEach((ship) => {
       this.minimap.fillStyle(0xf59e0b, 1);
       this.minimap.fillCircle(mapX + ship.sprite.x * scale, mapY + ship.sprite.y * scale, 3);
     });
   }
 
-  update(time) {
+  update(time, delta) {
     let accelX = 0;
     let accelY = 0;
-    const acceleration = (this.content.ship.acceleration ?? 1.5) * 420;
+    const acceleration = (
+      (this.content.ship.acceleration ?? 1.5) +
+      Number(this.loadout.modifierTotals.acceleration ?? 0)
+    ) * 420;
 
     if (this.keys.W.isDown) {
       accelY -= acceleration;
@@ -394,6 +485,10 @@ export class SpacePortScene extends Phaser.Scene {
       this.fireProjectile(time);
     }
 
+    if (Phaser.Input.Keyboard.JustDown(this.keys.Z)) {
+      this.forceAiRepath = true;
+    }
+
     this.bullets.children.each((bullet) => {
       if (!bullet.active) {
         return;
@@ -407,8 +502,21 @@ export class SpacePortScene extends Phaser.Scene {
       this.hooks.onStationInteract();
     }
 
+    if (time >= this.nextNavRebuildAt) {
+      this.rebuildNavMesh();
+      this.nextNavRebuildAt = time + 1000;
+    }
+
+    this.aiPilot.update(time, delta, {
+      navMesh: this.navMesh,
+      target: { x: this.player.x, y: this.player.y },
+      forceRepath: this.forceAiRepath,
+    });
+    this.forceAiRepath = false;
+
     this.syncRemoteShips();
     this.emitShipState(time);
+    this.emitShipHud(time);
     this.updateHud();
     this.updateMinimap();
   }

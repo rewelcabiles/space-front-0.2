@@ -31,8 +31,13 @@ export const useGameContent = (serverUrl) => {
 
   return useMemo(() => {
     const ship = content.ships["Nem-1"] ?? fallbackGameContent.ships["Nem-1"];
-    const module = content.modules["Projectile Cannon Mk1"] ??
+    const moduleCatalog = content.modules ?? fallbackGameContent.modules;
+    const primaryModuleName = moduleCatalog["Projectile Cannon Mk1"]
+      ? "Projectile Cannon Mk1"
+      : Object.keys(moduleCatalog)[0];
+    const module = moduleCatalog[primaryModuleName] ??
       fallbackGameContent.modules["Projectile Cannon Mk1"];
+    const itemCatalog = content.items ?? fallbackGameContent.items;
     const stationRootId = "1950d26c-5cb6-414c-84d3-6fda48f842d4";
     const introRootId = "82ca9c3c-2a8f-4e80-a4d6-09d1958be31d";
 
@@ -40,8 +45,12 @@ export const useGameContent = (serverUrl) => {
       raw: content,
       ship,
       module,
-      lootItemNames: Object.keys(content.items ?? fallbackGameContent.items),
+      moduleCatalog,
+      primaryModuleName,
+      itemCatalog,
+      lootItemNames: Object.keys(itemCatalog),
       stationDialogue: content.stationDialogue ?? fallbackGameContent.stationDialogue,
+      introDialogue: content.dialogue ?? fallbackGameContent.dialogue,
       stationRootId,
       introRootId,
     };

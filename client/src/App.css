@@ -112,6 +112,12 @@ button:hover {
   color: #cbd5e1;
 }
 
+.meta-line {
+  margin: 0 0 0.45rem;
+  font-size: 0.8rem;
+  color: #94a3b8;
+}
+
 .players {
   list-style: none;
   margin: 0;
@@ -174,6 +180,17 @@ button:hover {
   gap: 0.6rem;
 }
 
+.station-tabs {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.45rem;
+}
+
+.active-tab {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 1px #2563eb inset;
+}
+
 .error {
   color: #fca5a5;
   font-size: 0.9rem;
@@ -208,5 +225,9 @@ button:hover {
 
   .pill {
     text-align: center;
+  }
+
+  .station-tabs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }

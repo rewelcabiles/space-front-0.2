@@ -12,6 +12,7 @@ export function SpaceGameCanvas({
   onProgressGain,
   onCargoChange,
   onHealthChange,
+  onShipHudUpdate,
   onToggleCargo,
   onStationInteract,
 }) {
@@ -22,6 +23,7 @@ export function SpaceGameCanvas({
   const onProgressGainRef = useRef(onProgressGain);
   const onCargoChangeRef = useRef(onCargoChange);
   const onHealthChangeRef = useRef(onHealthChange);
+  const onShipHudUpdateRef = useRef(onShipHudUpdate);
   const onToggleCargoRef = useRef(onToggleCargo);
   const onStationInteractRef = useRef(onStationInteract);
 
@@ -43,6 +45,9 @@ export function SpaceGameCanvas({
   useEffect(() => {
     onHealthChangeRef.current = onHealthChange;
   }, [onHealthChange]);
+  useEffect(() => {
+    onShipHudUpdateRef.current = onShipHudUpdate;
+  }, [onShipHudUpdate]);
   useEffect(() => {
     onToggleCargoRef.current = onToggleCargo;
   }, [onToggleCargo]);
@@ -67,6 +72,7 @@ export function SpaceGameCanvas({
         onProgressGain: (...args) => onProgressGainRef.current?.(...args),
         onCargoChange: (...args) => onCargoChangeRef.current?.(...args),
         onHealthChange: (...args) => onHealthChangeRef.current?.(...args),
+        onShipHudUpdate: (...args) => onShipHudUpdateRef.current?.(...args),
         onToggleCargo: (...args) => onToggleCargoRef.current?.(...args),
         onStationInteract: (...args) => onStationInteractRef.current?.(...args),
       },
