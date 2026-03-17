@@ -70,6 +70,7 @@ describe("multiplayer app", () => {
       await waitForSocketEvent(bob, "joined_room");
       const twoPlayerRoomState = await twoPlayerRoomStatePromise;
       expect(twoPlayerRoomState.players).toHaveLength(2);
+      expect(twoPlayerRoomState.players[0].state).toBeTruthy();
 
       const syncedStatePromise = waitForSocketEvent(bob, "room_state");
       alice.emit("progress_update", {
@@ -78,6 +79,21 @@ describe("multiplayer app", () => {
       const syncedState = await syncedStatePromise;
       const syncedAlice = syncedState.players.find((player) => player.name === "Alice");
       expect(syncedAlice.progress).toEqual({ level: 3, experience: 85 });
+
+      const playerStatePromise = waitForSocketEvent(bob, "player_state");
+      alice.emit("player_state_update", {
+        state: {
+          x: 333,
+          y: 444,
+          rotation: 0.7,
+          velocityX: 10,
+          velocityY: -10,
+          health: 92,
+        },
+      });
+      const playerState = await playerStatePromise;
+      expect(playerState.state.x).toBe(333);
+      expect(playerState.name).toBe("Alice");
 
       const stateAfterDisconnectPromise = waitForSocketEvent(bob, "room_state");
       alice.disconnect();

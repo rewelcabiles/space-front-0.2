@@ -1,10 +1,19 @@
 import {
+  isValidPlayerState,
   isValidProgress,
   normalizePlayerName,
   normalizeRoomCode,
 } from "../validators.js";
 
 const defaultProgress = () => ({ level: 1, experience: 0 });
+const defaultState = () => ({
+  x: 1200,
+  y: 1200,
+  rotation: 0,
+  velocityX: 0,
+  velocityY: 0,
+  health: 100,
+});
 
 export const registerSocketHandlers = ({
   io,
@@ -37,10 +46,16 @@ export const registerSocketHandlers = ({
         socketId: socket.id,
         name: playerName,
         progress,
+        state: defaultState(),
       });
       await progressionRepository.savePlayerProgress(roomCode, playerName, progress);
 
-      socket.emit("joined_room", { roomCode, playerName, progress });
+      socket.emit("joined_room", {
+        roomCode,
+        playerName,
+        progress,
+        state: roomManager.getPlayer(roomCode, socket.id)?.state ?? defaultState(),
+      });
       io.to(roomCode).emit("room_state", roomManager.getRoomState(roomCode));
     });
 
@@ -67,6 +82,28 @@ export const registerSocketHandlers = ({
         payload.progress,
       );
       io.to(roomCode).emit("room_state", roomManager.getRoomState(roomCode));
+    });
+
+    socket.on("player_state_update", (payload = {}) => {
+      const roomCode = socket.data.roomCode;
+      if (!roomCode) {
+        return;
+      }
+
+      if (!isValidPlayerState(payload.state)) {
+        return;
+      }
+
+      const player = roomManager.updatePlayerState(roomCode, socket.id, payload.state);
+      if (!player) {
+        return;
+      }
+
+      socket.to(roomCode).emit("player_state", {
+        socketId: socket.id,
+        name: player.name,
+        state: payload.state,
+      });
     });
 
     socket.on("disconnect", () => {

@@ -53,6 +53,22 @@ export class RoomManager {
     return this.getRoomState(roomCode);
   }
 
+  updatePlayerState(roomCode, socketId, state) {
+    const room = this.rooms.get(roomCode);
+    if (!room) {
+      return null;
+    }
+
+    const player = room.get(socketId);
+    if (!player) {
+      return null;
+    }
+
+    player.state = state;
+    room.set(socketId, player);
+    return player;
+  }
+
   getRoomState(roomCode) {
     const room = this.rooms.get(roomCode);
     if (!room) {
@@ -61,10 +77,11 @@ export class RoomManager {
 
     return {
       roomCode,
-      players: [...room.values()].map(({ socketId, name, progress }) => ({
+      players: [...room.values()].map(({ socketId, name, progress, state }) => ({
         socketId,
         name,
         progress,
+        state,
       })),
     };
   }
