@@ -1,0 +1,26 @@
+{
+  "name": "workspace",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Multiplayer browser game monorepo",
+  "scripts": {
+    "dev": "concurrently -n server,client -c green,cyan \"npm run dev --prefix server\" \"npm run dev --prefix client\"",
+    "build": "npm run build --prefix client",
+    "test": "npm run test --prefix server",
+    "start": "npm run start --prefix server"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rewelcabiles/space-front-0.2.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/rewelcabiles/space-front-0.2/issues"
+  },
+  "homepage": "https://github.com/rewelcabiles/space-front-0.2#readme",
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}
