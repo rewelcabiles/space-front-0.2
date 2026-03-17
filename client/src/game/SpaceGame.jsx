@@ -40,6 +40,7 @@ class SpacePortScene extends Phaser.Scene {
     this.remoteShips = new Map();
     this.lastShipStateEmit = 0;
     this.lastCollisionDamage = 0;
+    this.isNearStation = false;
   }
 
   preload() {}
@@ -95,6 +96,15 @@ class SpacePortScene extends Phaser.Scene {
     );
 
     this.keys = this.input.keyboard.addKeys("W,A,S,D,SPACE,TAB,E");
+    this.input.keyboard.on("keydown-E", () => {
+      if (this.isNearStation) {
+        this.hooks.onStationInteract();
+      }
+    });
+    this.input.keyboard.on("keydown-TAB", (event) => {
+      event.preventDefault();
+      this.hooks.onToggleCargo();
+    });
 
     this.camera = this.cameras.main;
     this.camera.startFollow(this.player, true, 0.1, 0.1);
@@ -233,10 +243,19 @@ class SpacePortScene extends Phaser.Scene {
       Math.cos(aimAngle) * this.weaponStats.projectileSpeed,
       Math.sin(aimAngle) * this.weaponStats.projectileSpeed,
     );
+
+    this.applyAutoHit(aimAngle);
   }
 
   hitRock(bullet, rock) {
     bullet.disableBody(true, true);
+    this.damageRock(rock);
+  }
+
+  damageRock(rock) {
+    if (!rock?.active) {
+      return;
+    }
 
     const hp = (rock.getData("hp") ?? 24) - this.weaponStats.projectileDamage;
     rock.setData("hp", hp);
@@ -250,6 +269,49 @@ class SpacePortScene extends Phaser.Scene {
     lootDrop.setDepth(8);
     lootDrop.setCircle(8);
     rock.destroy();
+  }
+
+  applyAutoHit(aimAngle) {
+    const rockCandidates = this.rocks.getChildren().filter((rock) => rock.active);
+    if (rockCandidates.length === 0) {
+      return;
+    }
+
+    let bestRock = null;
+    let bestScore = Number.POSITIVE_INFINITY;
+
+    rockCandidates.forEach((rock) => {
+      const distance = Phaser.Math.Distance.Between(
+        this.player.x,
+        this.player.y,
+        rock.x,
+        rock.y,
+      );
+      if (distance > 320) {
+        return;
+      }
+
+      const rockAngle = Phaser.Math.Angle.Between(
+        this.player.x,
+        this.player.y,
+        rock.x,
+        rock.y,
+      );
+      const angleDiff = Math.abs(Phaser.Math.Angle.Wrap(rockAngle - aimAngle));
+      if (angleDiff > 0.55) {
+        return;
+      }
+
+      const score = angleDiff * 200 + distance;
+      if (score < bestScore) {
+        bestScore = score;
+        bestRock = rock;
+      }
+    });
+
+    if (bestRock) {
+      this.damageRock(bestRock);
+    }
   }
 
   collectLoot(playerSprite, lootSprite) {
@@ -289,14 +351,14 @@ class SpacePortScene extends Phaser.Scene {
       ].join("\n"),
     );
 
-    const nearStation = Phaser.Math.Distance.Between(
+    this.isNearStation = Phaser.Math.Distance.Between(
       this.player.x,
       this.player.y,
       this.station.x,
       this.station.y,
     ) < 240;
 
-    this.promptText.setText(nearStation ? "Press E to open station dialog" : "");
+    this.promptText.setText(this.isNearStation ? "Press E to open station dialog" : "");
   }
 
   updateMinimap() {
@@ -367,18 +429,8 @@ class SpacePortScene extends Phaser.Scene {
       }
     });
 
-    const nearStation = Phaser.Math.Distance.Between(
-      this.player.x,
-      this.player.y,
-      this.station.x,
-      this.station.y,
-    ) < 240;
-    if (nearStation && Phaser.Input.Keyboard.JustDown(this.keys.E)) {
+    if (this.isNearStation && Phaser.Input.Keyboard.JustDown(this.keys.E)) {
       this.hooks.onStationInteract();
-    }
-
-    if (Phaser.Input.Keyboard.JustDown(this.keys.TAB)) {
-      this.hooks.onToggleCargo();
     }
 
     this.syncRemoteShips();
