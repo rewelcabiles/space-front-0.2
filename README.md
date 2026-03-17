@@ -6,6 +6,8 @@ This repository now includes a browser-based multiplayer space game prototype:
 - `client/`: React + Vite frontend
 - Room-based multiplayer join flow (`name + room code`)
 - Phaser-powered space scene inspired by the original Python mechanics
+- Original game content loaded from Python JSON assets (`ships/modules/items/dialogue`)
+- Sprite assets aligned to original names (`nem-1`, `asteroid_1`, `space_station_1`, `rock_drop_1`)
 - Progression persistence via a swappable repository abstraction
 
 ## Why this structure
@@ -17,6 +19,19 @@ Progression storage is abstracted behind a repository interface:
 - `MongoProgressionRepository` (future extension point)
 
 Switch storage drivers through environment variables without touching game logic.
+
+Backend and frontend are now split into modular layers instead of monolithic files:
+
+- Backend:
+  - HTTP router modules in `server/src/http/`
+  - Socket event handlers in `server/src/socket/handlers/`
+  - Shared room/persistence/domain services in dedicated directories
+- Frontend:
+  - Socket/session state hook in `client/src/hooks/`
+  - Game scene in `client/src/game/scenes/`
+  - React canvas wrapper in `client/src/game/SpaceGameCanvas.jsx`
+  - UI components in `client/src/components/`
+  - Dialogue/content utilities in `client/src/game/content/` and `client/src/game/dialogue.js`
 
 ## Quick start
 
@@ -39,6 +54,12 @@ Frontend runs on Vite default (`http://localhost:5173`) and backend on `http://l
 - `PERSISTENCE_DRIVER` (`local` or `mongo`, default: `local`)
 - `LOCAL_PROGRESS_FILE` (default: `server/data/progression.json`)
 
+## HTTP API endpoints
+
+- `GET /api/health`
+- `GET /api/rooms/:roomCode`
+- `GET /api/game-content` (ships/modules/items/dialogue payload from original Python data files)
+
 ## Socket events
 
 - Client -> server:
@@ -55,7 +76,7 @@ Frontend runs on Vite default (`http://localhost:5173`) and backend on `http://l
 
 - `W/A/S/D`: move ship
 - `Mouse`: aim ship
-- `Left mouse`: fire projectile cannon
+- `Left mouse` or `F`: fire projectile cannon
 - `Space`: brake
 - `Tab`: toggle cargo panel
 - `E` near station: open station dialogue
