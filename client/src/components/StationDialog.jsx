@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
 import { buildDialogueOptions, getDialogueNode, resolveSetNode } from "../game/dialogue";
 
@@ -12,10 +12,6 @@ export function StationDialog({
   onClose,
 }) {
   const [section, setSection] = useState("dock");
-
-  useEffect(() => {
-    setSection("dock");
-  }, [nodeId]);
 
   const rawNode = useMemo(
     () => getDialogueNode(dialogueMap, nodeId),

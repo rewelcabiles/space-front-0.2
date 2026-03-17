@@ -120,6 +120,7 @@ function App() {
 
       {dialogNodeId && (
         <StationDialog
+          key={dialogNodeId}
           dialogueMap={content.stationDialogue}
           nodeId={dialogNodeId}
           onSelectNode={(nextNodeId) => {
