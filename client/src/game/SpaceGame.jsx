@@ -385,6 +385,12 @@ class SpacePortScene extends Phaser.Scene {
     this.cargo[itemName] = (this.cargo[itemName] ?? 0) + 1;
     this.hooks.onCargoChange({ ...this.cargo });
     this.hooks.onProgressGain(8);
+    writeDebugLog({
+      hypothesisId: "H4",
+      location: "SpaceGame.jsx:collectLoot",
+      message: "Loot collected and progression callback fired",
+      data: { itemName: itemName, amount: this.cargo[itemName] },
+    });
     lootSprite.destroy();
   }
 
