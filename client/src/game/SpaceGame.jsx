@@ -322,6 +322,8 @@ class SpacePortScene extends Phaser.Scene {
     lootDrop.setData("item", Phaser.Utils.Array.GetRandom(LOOT_ITEMS));
     lootDrop.setDepth(8);
     lootDrop.setCircle(8);
+    // Prototype convenience: immediately tractor dropped loot to player cargo.
+    this.collectLoot(this.player, lootDrop);
 
     // #region agent log
     writeDebugLog({

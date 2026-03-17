@@ -174,6 +174,9 @@ function App() {
               <button type="button" onClick={() => setShowCargo((value) => !value)}>
                 {showCargo ? "Hide cargo" : "Show cargo"}
               </button>
+              <button type="button" className="ghost" onClick={() => setDialogNodeId("intro-1")}>
+                Open station
+              </button>
             </div>
 
             <SpaceGame

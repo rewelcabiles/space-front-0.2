@@ -75,7 +75,7 @@ button:hover {
 
 .progress-panel {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: 0.8rem;
   border: 1px solid #334155;
   border-radius: 8px;
